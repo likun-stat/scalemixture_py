@@ -25,9 +25,9 @@
       
 
 if __name__ == "__main__":
-   import scale_mixture_py.integrate as utils
-   import scale_mixture_py.priors as priors
-   import scale_mixture_py.generic_samplers as sampler
+   import scalemixture_py.integrate as utils
+   import scalemixture_py.priors as priors
+   import scalemixture_py.generic_samplers as sampler
    import os
    import numpy as np
    import matplotlib.pyplot as plt
