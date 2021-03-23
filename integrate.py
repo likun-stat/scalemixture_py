@@ -225,9 +225,9 @@ def qmixture_me_interp(p, delta, tau_sqd, cdf_vals = np.nan, x_vals = np.nan,
   else:
     if np.any(np.isnan(cdf_vals)):
       cdf_vals = pmixture_me(x_vals, delta, tau_sqd)
-    
+  
   if not large_delta_large_x:
-    zeros = sum(cdf_vals<np.min(p))-1
+    zeros = sum(cdf_vals<np.min(p))-3
     tck = interp.splrep(cdf_vals[zeros:], x_vals[zeros:], s=0)
     q_vals = interp.splev(p, tck, der=0)
   else:
