@@ -63,7 +63,7 @@ def asymptotic_p(xval, delta):
 
 ## Approach 1: LowLevelCallable from C++
 ## gcc -shared -fPIC -o d_integrand.so d_integrand.c
-lib = ctypes.CDLL(os.path.abspath('./scale_mixture_py/p_integrand.so'))
+lib = ctypes.CDLL(os.path.abspath('./scalemixture_py/p_integrand.so'))
 lib.f.restype = ctypes.c_double
 lib.f.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p)
 
@@ -269,7 +269,7 @@ def asymptotic_d(xval, delta):
 
 ## Approach 1: LowLevelCallable from C++
 ## gcc -shared -fPIC -o d_integrand.so d_integrand.c
-libd = ctypes.CDLL(os.path.abspath('./scale_mixture_py/d_integrand.so'))
+libd = ctypes.CDLL(os.path.abspath('./scalemixture_py/d_integrand.so'))
 libd.f.restype = ctypes.c_double
 libd.f.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p)
 

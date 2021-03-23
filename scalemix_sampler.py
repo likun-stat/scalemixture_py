@@ -47,7 +47,7 @@ if __name__ == "__main__":
    comm = MPI.COMM_WORLD
    rank = comm.Get_rank()
    size = comm.Get_size()
-   thinning = 10; echo_interval = 50; n_updates = 201
+   thinning = 10; echo_interval = 50; n_updates = 40001
   
    # Load data input
    with open('test_scalemix.pkl', 'rb') as f:
