@@ -68,15 +68,20 @@ def static_metr(z, starting_theta, likelihood_fn,
     # Begin main loop
     for i in np.arange(1,n_updates):
         theta_star = theta + sigma_m * random_generator.standard_normal(p) @ prop_C
-        # cat(theta_star,hyper_params,"\n")
+        # print(str(theta_star)+', '+str(hyper_params))
         prior_star = prior_fn(theta_star, hyper_params)
         if prior_star != -np.inf:
                 likelihood_star = likelihood_fn(z, theta_star, *argv)
       
                 if np.isnan(likelihood_star): likelihood_star = -np.inf
-      
-                metr_ratio = np.exp(prior_star + likelihood_star -
-                                  prior - likelihood)
+                with np.errstate(over='raise'):
+                    try:
+                        metr_ratio = np.exp(prior_star + likelihood_star -
+                                  prior - likelihood)  # this gets caught and handled as an exception
+                    except FloatingPointError:
+                        print('- '+likelihood_fn.__name__+': theta_star='+str(theta_star)+", likelihood_star="+str(likelihood_star)+', theta='+str(theta)+", likelihood="+str(likelihood))
+                        metr_ratio=1
+                
                 if np.isnan(metr_ratio):  metr_ratio = 0
                 
                 if metr_ratio > random_generator.uniform(0,1,1): 

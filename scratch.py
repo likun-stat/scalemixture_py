@@ -471,6 +471,60 @@ plt.colorbar();
 
 
 
+# (5) GEV altogether: 0.2,-1, 0.1,-0.1, 0.1,1, -0.02,0.2
+def tmpf(x,y):
+    return utils.gev_update_mixture_me_likelihood(Design_mat, np.array([0.2,x, 0.1,-0.1, 0.1,y, -0.02,0.2]), 
+                                                        Y, X_s, cen, cen_above, prob_below, prob_above,
+                                                        delta, tau_sqd, Time, thresh_X, thresh_X_above)
+try_size = 50
+x = np.linspace(-1.6, -0.4, try_size)
+y = np.linspace(0.4, 1.6, try_size)
+
+Z = np.empty((try_size,try_size))
+for idy,yi in enumerate(y):
+    for idx,xi in enumerate(x):
+         Z[idy,idx] = tmpf(xi,yi)
+
+plt.contourf(x, y, Z, 20, cmap='RdGy')
+plt.colorbar();
+
+
+Res = sampler.adaptive_metr(Design_mat, np.array([-0.02,0.2]), utils.shape_gev_update_mixture_me_likelihood, 
+                            priors.unif_prior, 20, 5000, 
+                            random_generator,
+                            np.nan, True,
+                            False, .234, 10, .8,  10,
+                            Y, X_s, cen, cen_above, prob_below, prob_above,
+                            delta, tau_sqd, Loc, Scale, Time, thresh_X, thresh_X_above)
+
+
+plt.plot(np.arange(5000),Res['trace'][0,:], color='gray',linestyle='solid')
+plt.hlines(-0.02, 0, 5000, colors='r', linestyles='--');
+
+plt.plot(np.arange(5000),Res['trace'][1,:], color='gray',linestyle='solid')
+plt.hlines(0.2, 0, 5000, colors='r', linestyles='--');
+plt.plot(*Res['trace'])
+plt.show()
+
+
+def tmpf(x,y):
+    return utils.shape_gev_update_mixture_me_likelihood(Design_mat, np.array([x,y]), Y, X_s, cen, cen_above, prob_below, prob_above,
+                     delta, tau_sqd, Loc, Scale, Time, thresh_X, thresh_X_above)
+try_size = 50
+x = np.linspace(-0.0215, -0.0185, try_size)
+y = np.linspace(0.1985, 0.2020, try_size)
+
+Z = np.empty((try_size,try_size))
+for idy,yi in enumerate(y):
+    for idx,xi in enumerate(x):
+         Z[idy,idx] = tmpf(xi,yi)
+
+plt.contourf(x, y, Z, 20, cmap='RdGy')
+plt.colorbar();
+
+
+
+
 ## -------------------------------------------------------
 ## --------------------- For theta_c ---------------------
 ## -------------------------------------------------------

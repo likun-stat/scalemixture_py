@@ -80,6 +80,11 @@ def pmixture_me_C(xval, delta, tau_sqd):
     sd = np.sqrt(tau_sqd)
     
     # Nugget error gets to 100 times the sd? Negligible!
+    if tau_sqd < 0.05: 
+        tmp = 0
+        if xval>1:
+            tmp = asymptotic_p(xval, delta)
+        return tmp
     my_lower_bound = 100*sd
     I_1 = si.quad(func_p, -my_lower_bound, xval-1, args=(xval, tau_sqd, tmp1, tmp2, tmp3, tmp4))
     tmp = - I_1[0]/(np.sqrt(2*np.pi)*sd)
@@ -89,7 +94,7 @@ def pmixture_me_C(xval, delta, tau_sqd):
         return tmp
 
 ## Vectorize pmixture_me_C
-pmixture_me = np.vectorize(pmixture_me_C)   
+pmixture_me = np.vectorize(pmixture_me_C,otypes=[np.float])   
 
 
 
@@ -124,6 +129,11 @@ def pmixture_me_uni(xval, delta, tau_sqd):
     
     # Nugget error gets to 100 times the sd? Negligible!
     my_lower_bound = 100*sd
+    if tau_sqd < 0.05: 
+        tmp = 0
+        if xval>0:
+            tmp = asymptotic_p(xval, delta)
+        return tmp
     I_1 = si.quad(mix_distn_integrand, -my_lower_bound, xval-1, args=(xval, delta, tau_sqd, tmp1, tmp3, tmp4), full_output=1)
     I_2 = norm.cdf(xval-1, loc=0.0, scale=sd)
     tmp = I_2 - I_1[0]/math.sqrt(2*math.pi*tau_sqd)
@@ -147,9 +157,6 @@ pmixture_me_py = np.vectorize(pmixture_me_uni)
     
 ##
 ## -------------------------------------------------------------------------- ##
-
-
-
 
 
 
@@ -197,7 +204,13 @@ def find_xrange_pmixture_me(min_p, max_p, x_init, delta, tau_sqd):#, relerr = 1e
 
 
 
-
+import sklearn
+import sklearn.isotonic
+# from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+# from sklearn.ensemble import HistGradientBoostingRegressor
+# x_vals_tmp = x_vals.reshape(-1,1)
+# cdf_gbdt = HistGradientBoostingRegressor(monotonic_cst=[1]).fit(x_vals_tmp, cdf_vals)
+# cdf_vals_1 = cdf_gbdt.predict(x_vals_tmp)
 
 
 ## -------------------------------------------------------------------------- ##
@@ -226,18 +239,26 @@ def qmixture_me_interp(p, delta, tau_sqd, cdf_vals = np.nan, x_vals = np.nan,
     if np.any(np.isnan(cdf_vals)):
       cdf_vals = pmixture_me(x_vals, delta, tau_sqd)
   
+  # Obtain the quantile level using the interpolated function
   if not large_delta_large_x:
-    zeros = sum(cdf_vals<np.min(p))-3
-    tck = interp.splrep(cdf_vals[zeros:], x_vals[zeros:], s=0)
-    q_vals = interp.splev(p, tck, der=0)
+     zeros = sum(cdf_vals==0)
+     try:
+         tck = interp.pchip(cdf_vals[zeros:], x_vals[zeros:]) # 1-D monotonic cubic interpolation.
+     except ValueError:
+         ir = sklearn.isotonic.IsotonicRegression(increasing=True)
+         ir.fit(x_vals[zeros:], cdf_vals[zeros:])
+         cdf_vals_1 = ir.predict(x_vals[zeros:])
+         indices = np.where(np.diff(cdf_vals_1)==0)[0]+1
+         tck = interp.pchip(np.delete(cdf_vals_1,indices), np.delete(x_vals[zeros:],indices))
+     q_vals = tck(p)
   else:
-    which = p>cdf_vals[-1]
-    q_vals = np.repeat(np.nan, np.shape(p)[0])
-    q_vals[which] = x_range[1]
-    if np.any(~which):
-        tck = interp.splrep(cdf_vals, x_vals, s=0)
-        q_vals[~which] = interp.splev(p[~which], tck, der=0)
-  
+     which = p>cdf_vals[-1]
+     q_vals = np.repeat(np.nan, np.shape(p)[0])
+     q_vals[which] = x_range[1]
+     if np.any(~which):
+         # tck = interp.interp1d(cdf_vals, x_vals, kind = 'cubic')
+         tck = interp.pchip(cdf_vals, x_vals)
+         q_vals[~which] = tck(p[~which])  
   return q_vals
   
       
@@ -247,9 +268,38 @@ def qmixture_me_interp(p, delta, tau_sqd, cdf_vals = np.nan, x_vals = np.nan,
 
 
 
+# import matplotlib.pyplot as plt
+# axes = plt.gca()
+# # axes.set_ylim([0,0.125])
+# X_vals = np.linspace(0.001,300,num=300)
+
+# import time
+# delta=0.3; tau_sqd=0.001
+
+# start_time = time.time()
+# D_asym = asymptotic_p(X_vals, delta)
+# time.time() - start_time
+
+# start_time = time.time()
+# D_mix = pmixture_me(X_vals, delta, tau_sqd)
+# time.time() - start_time
+
+# start_time = time.time()
+# D_py = pmixture_me_py(X_vals, delta, tau_sqd)
+# time.time() - start_time
+
+# fig, ax = plt.subplots()
+# ax.plot(X_vals[3:], D_asym[3:], 'b', label="Smooth R^phi*W")
+# ax.plot(X_vals, D_mix, 'r',linestyle='--', label="With nugget: C++ lowlevel callable")
+# ax.plot(X_vals, D_py, 'g',linestyle=':', label="With nugget: numerical int")
+# legend = ax.legend(loc = "lower right",shadow=True)
+# plt.title(label="Delta") 
+# plt.show()
 
 
-
+# q_vals = qmixture_me_interp(np.array([0.2,0.6,0.9]), delta, tau_sqd)
+# plt.plot(D_mix, X_vals, 'r',linestyle='--')
+# plt.scatter(np.array([0.2,0.6,0.9]), q_vals)
 
 
 
@@ -262,8 +312,6 @@ def asymptotic_d(xval, delta):
     else:
         result = ((1-delta)/(2*delta-1))*(xval**(-1/delta)-xval**(-2))   
     return result
-
-
 
 
 
@@ -285,6 +333,11 @@ def dmixture_me_C(xval, delta, tau_sqd):
     sd = np.sqrt(tau_sqd)
 
     # Nugget error gets to 100 times the sd? Negligible!
+    if tau_sqd<0.05:
+        tmp = 0
+        if xval>1:
+            tmp = asymptotic_d(xval, delta)
+        return tmp
     my_lower_bound = 100*sd
     I_1 = si.quad(func_d, -my_lower_bound, xval-1, args=(xval, tau_sqd, tmp1, tmp2, tmp3))
     tmp_res = - I_1[0]/(np.sqrt(2*np.pi)*sd)
@@ -296,7 +349,7 @@ def dmixture_me_C(xval, delta, tau_sqd):
 
 
 ## Vectorize dmixture_me_C
-dmixture_me = np.vectorize(dmixture_me_C)   
+dmixture_me = np.vectorize(dmixture_me_C,otypes=[np.float])   
 
 
 
@@ -353,6 +406,33 @@ dmixture_me_py = np.vectorize(dmixture_me_uni)
 
 
 
+# import matplotlib.pyplot as plt
+# axes = plt.gca()
+# # axes.set_ylim([0,0.125])
+# X_vals = np.linspace(0.001,300,num=300)
+
+# import time
+# delta=0.3; tau_sqd=0.001
+
+# start_time = time.time()
+# D_asym = asymptotic_d(X_vals, delta)
+# time.time() - start_time
+
+# start_time = time.time()
+# D_mix = dmixture_me(X_vals, delta, tau_sqd)
+# time.time() - start_time
+
+# start_time = time.time()
+# D_py = dmixture_me_py(X_vals, delta, tau_sqd)
+# time.time() - start_time
+
+# fig, ax = plt.subplots()
+# ax.plot(X_vals[3:], D_asym[3:], 'b', label="Smooth R^phi*W")
+# ax.plot(X_vals, D_mix, 'r',linestyle='--', label="With nugget: C++ lowlevel callable")
+# ax.plot(X_vals[1:], D_py[1:], 'g',linestyle=':', label="With nugget: numerical int")
+# legend = ax.legend(loc = "upper right",shadow=True)
+# plt.title(label="Delta") 
+# plt.show()
 
 
 
@@ -954,6 +1034,60 @@ def shape_gev_update_mixture_me_likelihood(data, params, Y, X_s, cen, cen_above,
   ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above,
                                     Loc, Scale, Shape, delta, tau_sqd, thresh_X, thresh_X_above)
   return ll
+  
+  
+## For all GEV parameter
+def gev_update_mixture_me_likelihood(params, data, Y, X_s, cen, cen_above, prob_below, prob_above,
+                     delta, tau_sqd, Time, thresh_X, thresh_X_above):
+  
+  ## Design_mat = data
+  ## For the time being, assume that the intercept, slope are CONSTANTS
+  beta_loc0 = params[0:2]
+  beta_loc1 = params[2:4]
+  beta_scale = params[4:6]
+  beta_shape = params[6:8]
+  
+  loc0 = data@beta_loc0
+  loc1 = data@beta_loc1
+  scale = data@beta_scale
+  shape = data@beta_shape  # mu = Xb
+  if np.any(scale < 0):
+      return -np.inf
+  
+  if len(X_s.shape)==1:
+      X_s = X_s.reshape((X_s.shape[0],1))
+  n_t = X_s.shape[1]
+  n_s = X_s.shape[0]
+  Loc = np.tile(loc0, n_t) + np.tile(loc1, n_t)*np.repeat(Time,n_s)
+  Loc = Loc.reshape((n_s,n_t),order='F')
+  Scale = np.tile(scale, n_t)
+  Scale = Scale.reshape((n_s,n_t),order='F')
+  Shape = np.tile(shape, n_t)
+  Shape = Shape.reshape((n_s,n_t),order='F')
+  
+  max_support = Loc - Scale/Shape
+  max_support[Shape>0] = np.inf
+  
+  tmp=pgev(Y[~cen & ~cen_above], Loc[~cen & ~cen_above], Scale[~cen & ~cen_above], Shape[~cen & ~cen_above])
+  
+  # If the parameters imply support that is not consistent with the data,
+  # then reject the parameters.
+  if np.any(Y > max_support) or np.min(tmp)<prob_below-0.05 or np.max(tmp)>prob_above+0.05:
+      return -np.inf
+  
+  # cen = which_censored(Y, Loc, Scale, Shape, prob_below) # 'cen' isn't altered in Global
+  # cen_above = which_censored(Y, Loc, Scale, Shape, prob_above)
+  
+  ## What if GEV params are such that all Y's are censored?
+  if(np.all(cen)):
+      return -np.inf
+  
+  X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
+  ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above,
+                                    Loc, Scale, Shape, delta, tau_sqd, thresh_X, thresh_X_above)
+  return ll
+
+
 ##
 ## -------------------------------------------------------------------------- ##
 
