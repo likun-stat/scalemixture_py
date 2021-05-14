@@ -57,6 +57,7 @@ if __name__ == "__main__":
      initial_values = load(f)
      sigma_m = load(f)
      prop_sigma = load(f)
+     f.close()
      
    # Filename for storing the intermediate results
    filename='./scalemix_progress_'+str(rank)+'.pkl'
