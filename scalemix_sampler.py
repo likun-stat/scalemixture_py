@@ -513,6 +513,7 @@ if __name__ == "__main__":
                plt.ylabel(r'Location $\mu_1$: $\beta_1$')
                plt.tight_layout()
                pdf_pages.savefig(fig)
+               plt.close()
                    
                #-page-2
                fig = plt.figure(figsize = (8.75, 11.75))
@@ -538,6 +539,7 @@ if __name__ == "__main__":
                    plt.ylabel(r'$Z$'+'['+str(i)+","+str(rank)+']')        
                plt.tight_layout()
                pdf_pages.savefig(fig)
+               plt.close()
                pdf_pages.close()                 
            else:
                with open(filename, 'wb') as f:
