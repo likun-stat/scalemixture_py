@@ -61,7 +61,7 @@ def invGamma_prior(params, hyper_params):
 
 
 ## --------------------------------------------------------------------- ##
-##  Computes the Levy prior for R. (one dim)                    #
+##  Computes the standard Pareto prior for R. (one dim)                    #
 def R_powered_prior(params, hyper_params):
    x = params #R_powered with one element
    phi = hyper_params[0]
@@ -76,12 +76,12 @@ def R_powered_prior(params, hyper_params):
 
 def R_prior(params, hyper_params):
    x = params # one element
-   s = hyper_params # gamma
+   s = hyper_params # 1
    
-   if x<0:
-       return -np.inf
+   if x<1:
+       dens = -np.inf
    else:
-       dens = np.log(s/(2 * np.pi))/2 - 3 * np.log(x)/2 - s/(2 * x)
+       dens = -2 * np.log(x)
    return dens
 
 ##

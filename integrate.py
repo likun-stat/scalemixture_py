@@ -267,7 +267,7 @@ def qmixture_me_interp(p, delta, tau_sqd, cdf_vals = np.nan, x_vals = np.nan,
 
 
 
-
+## The CDF function can't deal with delta = 0.5
 # import matplotlib.pyplot as plt
 # axes = plt.gca()
 # # axes.set_ylim([0,0.125])
@@ -553,6 +553,32 @@ def eig2inv_quadform_vector(V, d_inv, x):
 ## -------------------------------------------------------------------------- ##
 
 
+## -------------------------------------------------------------------------- ##
+## -------------------------------------------------------------------------- ##
+##                    Transform Normal to Standard Pareto
+## -------------------------------------------------------------------------- ##
+## -------------------------------------------------------------------------- ##
+##
+##
+## i.e., Stable variables with alpha=1/2
+##
+def norm_to_Pareto(z):
+    if(isinstance(z, (int, np.int64, float))): z=np.array([z])
+    tmp = norm.cdf(z)
+    if np.any(tmp==1): tmp[tmp==1]=1-1e-9
+    return 1/(1-tmp)
+
+
+def pareto_to_Norm(W):
+    if(isinstance(W, (int, np.int64, float))): W=np.array([W])
+    if np.any(W<1): sys.exit("W must be greater than 1")
+    tmp = 1-1/W
+    return norm.ppf(tmp)
+        
+## -------------------------------------------------------------------------- ##
+
+
+
 
 ## -------------------------------------------------------------------------- ##
 ## For generalized extreme value (GEV) distribution
@@ -651,7 +677,7 @@ def marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above,
   if np.any(cen_above):
      ll[cen_above] = norm.logsf(thresh_X_above, loc=X_s[cen_above], scale=sd)
   
-  if np.any(~cen):
+  if np.any(~cen & ~cen_above):
      # # Sometimes pgev easily becomes 1, which causes the gev_2_scalemix to become nan
      # if np.any(np.isnan(X[~cen])):
      #     return -np.inf
@@ -739,14 +765,79 @@ def X_s_update_onetime(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc, S
     #result = (X_s,accept)
     return accept
 
-def Rt_update_mixture_me_likelihood(data, params, delta, V, d):
-  X_s = data
-  Rt = params
-  if Rt < 1:
+
+
+def Z_likelihood_conditional(Z, V, d):
+    # R_powered = R**phi
+    part1 = -0.5*eig2inv_quadform_vector(V, 1/d, Z)-0.5*np.sum(np.log(d))
+    return part1
+
+def Z_update_onetime(Y, X, R, Z, cen, cen_above, prob_below, prob_above,
+                delta, tau_sqd, Loc, Scale, Shape, thresh_X, thresh_X_above, 
+                V, d, Sigma_m, random_generator):
+    
+    n_s = X.size
+    prop_Z = np.empty(X.shape)
+    accept = np.zeros(n_s)
+    ## Generate X_s
+    X_s = (R**(delta/(1-delta)))*norm_to_Pareto(Z)
+    
+    log_num=0; log_denom=0 # sd= np.sqrt(tau_sqd)
+    for idx, Z_idx in enumerate(Z):
+        # tripped : X = Y, changing X will change Y as well.
+        prop_Z[:] = Z
+        # temp = X_s(iter)+v_q(iter)*R::rnorm(0,1);
+        temp = Z_idx + Sigma_m[idx]*random_generator.standard_normal(1)
+        prop_Z[idx] = temp
+        prop_X_s_idx = (R**(delta/(1-delta)))*norm_to_Pareto(temp)
+        
+        log_num = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], prop_X_s_idx, 
+                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd,  
+                       thresh_X, thresh_X_above) + Z_likelihood_conditional(prop_Z, V, d);
+        log_denom = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], X_s[idx], 
+                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd, 
+                       thresh_X, thresh_X_above) + Z_likelihood_conditional(Z, V, d);
+        
+        with np.errstate(over='raise'):
+            try:
+                r = np.exp(log_num - log_denom)  # this gets caught and handled as an exception
+            except FloatingPointError:
+                print(" -- idx="+str(idx)+", Z="+str(Z[idx])+", prop_Z="+str(temp)+", log_num="+str(log_num)+", log_denom="+str(log_denom))
+                r=0
+    
+        if random_generator.uniform(0,1,1)<r:
+            Z[idx] = temp  # changes argument 'Z' directly
+            X_s[idx] = prop_X_s_idx
+            accept[idx] = accept[idx] + 1
+    
+    #result = (X_s,accept)
+    return accept
+
+
+def Rt_update_mixture_me_likelihood(data, params, X, Z, cen, cen_above, 
+                prob_below, prob_above, Loc, Scale, Shape, delta, tau_sqd,
+                thresh_X, thresh_X_above):
+  Y = data
+  R = params
+    
+  if R < 1:
       return -np.inf
   else:
-      ll = X_s_likelihood_conditional(X_s, Rt, V, d)
+      ## Generate X_s
+      X_s = (R**(delta/(1-delta)))*norm_to_Pareto(Z)
+      ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, 
+                prob_below, prob_above, Loc, Scale, Shape, delta, tau_sqd, 
+                thresh_X, thresh_X_above)
       return ll
+  
+# def Rt_update_mixture_me_likelihood(data, params, delta, V, d):
+#   X_s = data
+#   Rt = params
+#   if Rt < 1:
+#       return -np.inf
+#   else:
+#       ll = X_s_likelihood_conditional(X_s, Rt, V, d)
+#       return ll
 
 ##
 ## -------------------------------------------------------------------------- ##
@@ -761,18 +852,19 @@ def Rt_update_mixture_me_likelihood(data, params, delta, V, d):
 ##
 ##
 
-def delta_update_mixture_me_likelihood(data, params, Y, X_s, cen, cen_above, 
+def delta_update_mixture_me_likelihood(data, params, R, Z, cen, cen_above, 
                                        prob_below, prob_above,
                                        Loc, Scale, Shape, tau_sqd):
-  R = data
+  Y = data
   delta = params
   if delta < 0 or delta > 1:
       return -np.inf
   
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
+  X_s = (R**(delta/(1-delta)))*norm_to_Pareto(Z)
   
   ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc, 
-                Scale, Shape, delta, tau_sqd) + dhuser_wadsworth(R, delta, log=True)
+                Scale, Shape, delta, tau_sqd)
 
   return ll
                                                                              
@@ -810,6 +902,7 @@ def tau_update_mixture_me_likelihood(data, params, X_s, cen, cen_above, prob_bel
   tau_sqd = params
 
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
+  
   ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc, 
                                             Scale, Shape, delta, tau_sqd)
   
@@ -827,14 +920,13 @@ def tau_update_mixture_me_likelihood(data, params, X_s, cen, cen_above, prob_bel
 ## mixing distribution comes from Huser-wadsworth scale mixture.
 ##
 ##
-def theta_c_update_mixture_me_likelihood(data, params, X_s, S, V=np.nan, d=np.nan):
-  if len(X_s.shape)==1:
-      X_s = X_s.reshape((X_s.shape[0],1))
-  n_t = X_s.shape[1]
-  
-  R = data
+def theta_c_update_mixture_me_likelihood(data, params, S, V=np.nan, d=np.nan):
+  Z = data
   range = params[0]
   nu = params[1]
+  if len(Z.shape)==1:
+      Z = Z.reshape((Z.shape[0],1))
+  n_t = Z.shape[1]
   
   if np.any(np.isnan(V)):
     Cor = corr_fn(S, np.array([range,nu]))
@@ -844,29 +936,29 @@ def theta_c_update_mixture_me_likelihood(data, params, X_s, S, V=np.nan, d=np.na
 
   ll = np.empty(n_t)
   ll[:]=np.nan
-  for idx, R_i in enumerate(R):
-    ll[idx] = X_s_likelihood_conditional(X_s[:,idx], R_i, V, d)
+  for idx in np.arange(n_t):
+    ll[idx] = Z_likelihood_conditional(Z[:,idx], V, d)
   return np.sum(ll)
 
 
-def range_update_mixture_me_likelihood(data, params, X_s, S, nu, V=np.nan, d=np.nan):
-  if len(X_s.shape)==1:
-      X_s = X_s.reshape((X_s.shape[0],1))
-  n_t = X_s.shape[1]
+def range_update_mixture_me_likelihood(data, params, nu, S, V=np.nan, d=np.nan):
+  Z = data
+  range = params
   
-  R = data
-  range = params[0]
-   
+  if len(Z.shape)==1:
+      Z = Z.reshape((Z.shape[0],1))
+  n_t = Z.shape[1]
+  
   if np.any(np.isnan(V)):
     Cor = corr_fn(S, np.array([range,nu]))
     eig_Cor = np.linalg.eigh(Cor) #For symmetric matrices
     V = eig_Cor[1]
     d = eig_Cor[0]
-  
+
   ll = np.empty(n_t)
   ll[:]=np.nan
-  for idx, R_i in enumerate(R):
-    ll[idx] = X_s_likelihood_conditional(X_s[:,idx], R_i, V, d)
+  for idx in np.arange(n_t):
+    ll[idx] = Z_likelihood_conditional(Z[:,idx], V, d)
   return np.sum(ll)
 
 ##
@@ -901,14 +993,7 @@ def loc0_gev_update_mixture_me_likelihood(data, params, Y, X_s, cen, cen_above, 
   
   # If the parameters imply support that is not consistent with the data,
   # then reject the parameters.
-  if np.any(Y > max_support) or np.min(tmp)<prob_below-0.05 or np.max(tmp)>prob_above+0.05:
-      return -np.inf
-  
-  # cen = which_censored(Y, Loc, Scale, Shape, prob_below) # 'cen' isn't altered in Global
-  # cen_above = which_censored(Y, Loc, Scale, Shape, prob_above)
-  
-  ## What if GEV params are such that all Y's are censored?
-  if(np.all(cen)):
+  if np.any(Y > max_support) or np.min(tmp)<prob_below or np.max(tmp)>prob_above:
       return -np.inf
   
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
@@ -940,14 +1025,7 @@ def loc1_gev_update_mixture_me_likelihood(data, params, Y, X_s, cen, cen_above, 
   
   # If the parameters imply support that is not consistent with the data,
   # then reject the parameters.
-  if np.any(Y > max_support) or np.min(tmp)<prob_below-0.05 or np.max(tmp)>prob_above+0.05:
-      return -np.inf
-  
-  # cen = which_censored(Y, Loc, Scale, Shape, prob_below) # 'cen' isn't altered in Global
-  # cen_above = which_censored(Y, Loc, Scale, Shape, prob_above)
-  
-  ## What if GEV params are such that all Y's are censored?
-  if(np.all(cen)):
+  if np.any(Y > max_support) or np.min(tmp)<prob_below or np.max(tmp)>prob_above:
       return -np.inf
   
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
@@ -981,14 +1059,7 @@ def scale_gev_update_mixture_me_likelihood(data, params, Y, X_s, cen, cen_above,
   
   # If the parameters imply support that is not consistent with the data,
   # then reject the parameters.
-  if np.any(Y > max_support) or np.min(tmp)<prob_below-0.05 or np.max(tmp)>prob_above+0.05:
-      return -np.inf
-  
-  # cen = which_censored(Y, Loc, Scale, Shape, prob_below) # 'cen' isn't altered in Global
-  # cen_above = which_censored(Y, Loc, Scale, Shape, prob_above)
-  
-  ## What if GEV params are such that all Y's are censored?
-  if(np.all(cen)):
+  if np.any(Y > max_support) or np.min(tmp)<prob_below or np.max(tmp)>prob_above:
       return -np.inf
   
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
@@ -1020,14 +1091,7 @@ def shape_gev_update_mixture_me_likelihood(data, params, Y, X_s, cen, cen_above,
   
   # If the parameters imply support that is not consistent with the data,
   # then reject the parameters.
-  if np.any(Y > max_support) or np.min(tmp)<prob_below-0.05 or np.max(tmp)>prob_above+0.05:
-      return -np.inf
-  
- # cen = which_censored(Y, Loc, Scale, Shape, prob_below) # 'cen' isn't altered in Global
-  # cen_above = which_censored(Y, Loc, Scale, Shape, prob_above)
-  
-  ## What if GEV params are such that all Y's are censored?
-  if(np.all(cen)):
+  if np.any(Y > max_support) or np.min(tmp)<prob_below or np.max(tmp)>prob_above:
       return -np.inf
   
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
@@ -1072,16 +1136,9 @@ def gev_update_mixture_me_likelihood(params, data, Y, X_s, cen, cen_above, prob_
   
   # If the parameters imply support that is not consistent with the data,
   # then reject the parameters.
-  if np.any(Y > max_support) or np.min(tmp)<prob_below-0.05 or np.max(tmp)>prob_above+0.05:
+  if np.any(Y > max_support) or np.min(tmp)<prob_below or np.max(tmp)>prob_above:
       return -np.inf
-  
-  # cen = which_censored(Y, Loc, Scale, Shape, prob_below) # 'cen' isn't altered in Global
-  # cen_above = which_censored(Y, Loc, Scale, Shape, prob_above)
-  
-  ## What if GEV params are such that all Y's are censored?
-  if(np.all(cen)):
-      return -np.inf
-  
+    
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
   ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above,
                                     Loc, Scale, Shape, delta, tau_sqd, thresh_X, thresh_X_above)

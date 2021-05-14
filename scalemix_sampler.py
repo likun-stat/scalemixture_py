@@ -86,11 +86,12 @@ if __name__ == "__main__":
    prob_above = initial_values['prob_above']
    theta_c = initial_values['theta_c']
    X = initial_values['X']
-   X_s = initial_values['X_s']
+   Z = initial_values['Z']
    R = initial_values['R']
+   # X_s = (R**(delta/(1-delta)))*utils.norm_to_Pareto(Z)
    Y_onetime = Y[:,rank]
    X_onetime = X[:,rank]
-   X_s_onetime = X_s[:,rank]
+   Z_onetime = Z[:,rank]
    R_onetime = R[rank]
   
    Design_mat = initial_values['Design_mat']
@@ -136,14 +137,15 @@ if __name__ == "__main__":
    Shape = Shape.reshape((n_s,n_t),order='F')
     
    # Initial trace objects
-   X_s_1t_accept = np.zeros(n_s)
+   Z_1t_accept = np.zeros(n_s)
    R_accept = 0
-   X_s_1t_trace = np.empty((n_s,n_updates_thinned)); X_s_1t_trace[:] = np.nan
-   X_s_1t_trace[:,0] = X_s_onetime  
+   Z_1t_trace = np.empty((n_s,n_updates_thinned)); Z_1t_trace[:] = np.nan
+   Z_1t_trace[:,0] = Z_onetime  
    R_1t_trace = np.empty(n_updates_thinned); R_1t_trace[:] = np.nan
    R_1t_trace[0] = R_onetime
    if rank == 0:
      print("Number of time replicates = %d"%size)
+     X_s = np.empty((n_s,n_t))
      delta_trace = np.empty(n_updates_thinned); delta_trace[:] = np.nan
      delta_trace[0] = delta
      tau_sqd_trace = np.empty(n_updates_thinned); tau_sqd_trace[:] = np.nan
@@ -183,40 +185,48 @@ if __name__ == "__main__":
        X_onetime = utils.X_update(Y_onetime, cen[:,rank], cen_above[:,rank], delta, tau_sqd, Loc[:,rank], Scale[:,rank], Shape[:,rank])
       
        # Update X_s
-       tmp = utils.X_s_update_onetime(Y_onetime, X_onetime, X_s_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above,
-                                    Loc[:,rank], Scale[:,rank], Shape[:,rank], delta, tau_sqd, thresh_X, thresh_X_above,
-                                    R_onetime, V, d, sigma_m['X_s_onetime'], random_generator)
-       X_s_1t_accept = X_s_1t_accept + tmp
+       tmp = utils.Z_update_onetime(Y_onetime, X_onetime, R_onetime, Z_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above,
+                                    delta, tau_sqd, Loc[:,rank], Scale[:,rank], Shape[:,rank], thresh_X, thresh_X_above,
+                                    V, d, sigma_m['Z_onetime'], random_generator)
+       Z_1t_accept = Z_1t_accept + tmp
       
        # Update R
-       Metr_R = sampler.static_metr(X_s_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood, 
-                           priors.huser_wadsworth_prior, delta, 2, 
+       Metr_R = sampler.static_metr(Y_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood, 
+                           priors.R_prior, 1, 2, 
                            random_generator,
                            np.nan, sigma_m['R_1t'], False, 
-                           delta, V, d)
+                           X_onetime, Z_onetime, 
+                           cen[:,rank], cen_above[:,rank], prob_below, prob_above, 
+                           Loc[:,rank], Scale[:,rank], Shape[:,rank], delta, tau_sqd,
+                           thresh_X, thresh_X_above)
        R_accept = R_accept + Metr_R['acc_prob']
        R_onetime = Metr_R['trace'][0,1]
+       
+       X_s_onetime = (R_onetime**(delta/(1-delta)))*utils.norm_to_Pareto(Z_onetime)
 
        # *** Gather items ***
        X_s_recv = comm.gather(X_s_onetime,root=0)
        X_recv = comm.gather(X_onetime, root=0)
+       Z_recv = comm.gather(Z_onetime, root=0)
        R_recv = comm.gather(R_onetime, root=0)
 
        if rank==0:
            X_s[:] = np.vstack(X_s_recv).T
            X[:] = np.vstack(X_recv).T
+           Z[:] = np.vstack(Z_recv).T
            R[:] = R_recv
            index_within = (iter-1)%thinning
            # print('beta_shape_accept=',beta_shape_accept, ', iter=', iter)
 
            # Update delta
-           Metr_delta = sampler.static_metr(R, delta, utils.delta_update_mixture_me_likelihood, priors.interval_unif, 
+           Metr_delta = sampler.static_metr(Y, delta, utils.delta_update_mixture_me_likelihood, priors.interval_unif, 
                    hyper_params_delta, 2, 
                    random_generator,
                    np.nan, sigma_m['delta'], False, 
-                   Y, X_s, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, tau_sqd)
+                   R, Z, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, tau_sqd)
            delta_accept = delta_accept + Metr_delta['acc_prob']
            delta = Metr_delta['trace'][0,1]
+           X_s[:] = (R**(delta/(1-delta)))*utils.norm_to_Pareto(Z)
            
            # Update tau_sqd
            Metr_tau_sqd = sampler.static_metr(Y, tau_sqd, utils.tau_update_mixture_me_likelihood, priors.invGamma_prior, 
@@ -231,11 +241,11 @@ if __name__ == "__main__":
            thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
            
            # Update theta_c
-           Metr_theta_c = sampler.static_metr(R, theta_c, utils.theta_c_update_mixture_me_likelihood, 
+           Metr_theta_c = sampler.static_metr(Z, theta_c, utils.theta_c_update_mixture_me_likelihood, 
                              priors.interval_unif_multi, hyper_params_theta_c, 2,
                              random_generator,
                              prop_sigma['theta_c'], sigma_m['theta_c'], False,
-                             X_s, Dist)
+                             Dist)
            theta_c_accept = theta_c_accept + Metr_theta_c['acc_prob']
            theta_c = Metr_theta_c['trace'][:,1]
            theta_c_trace_within_thinning[:,index_within] = theta_c
@@ -326,7 +336,7 @@ if __name__ == "__main__":
            index = np.int(iter/thinning)
            
            # Fill in trace objects
-           X_s_1t_trace[:,index] = X_s_onetime  
+           Z_1t_trace[:,index] = Z_onetime  
            R_1t_trace[index] = R_onetime
            if rank == 0:
                delta_trace[index] = delta
@@ -341,8 +351,8 @@ if __name__ == "__main__":
            # Adapt via Shaby and Wells (2010)
            gamma2 = 1 / (index + offset)**(c_1)
            gamma1 = c_0*gamma2
-           sigma_m['X_s_onetime'] = np.exp(np.log(sigma_m['X_s_onetime']) + gamma1*(X_s_1t_accept/thinning - r_opt_1d))
-           X_s_1t_accept[:] = 0
+           sigma_m['Z_onetime'] = np.exp(np.log(sigma_m['Z_onetime']) + gamma1*(Z_1t_accept/thinning - r_opt_1d))
+           Z_1t_accept[:] = 0
            sigma_m['R_1t'] = np.exp(np.log(sigma_m['R_1t']) + gamma1*(R_accept/thinning - r_opt_1d))
            R_accept = 0
           
@@ -439,7 +449,7 @@ if __name__ == "__main__":
                     'Dist':Dist,
                     'theta_c':theta_c,
                     'X':X,
-                    'X_s':X_s,
+                    'Z':Z,
                     'R':R,
                     'Design_mat':Design_mat,
                     'beta_loc0':beta_loc0,
@@ -464,7 +474,7 @@ if __name__ == "__main__":
                    dump(beta_scale_trace, f)
                    dump(beta_shape_trace, f)
                    
-                   dump(X_s_1t_trace, f)
+                   dump(Z_1t_trace, f)
                    dump(R_1t_trace, f)
                    dump(Y_onetime, f)
                    dump(X_onetime, f)
@@ -519,13 +529,13 @@ if __name__ == "__main__":
                plt.plot(beta_shape_trace[1,:], color='gray', linestyle='solid')
                plt.ylabel(r'Shape $\xi$: $\beta_1$')
                plt.subplot2grid(grid_size, (2,0))   # X^*
-               plt.plot(X_s_1t_trace[1,:], color='gray', linestyle='solid')
+               plt.plot(Z_1t_trace[1,:], color='gray', linestyle='solid')
                plt.ylabel(r'$X^*$'+'['+str(1)+","+str(rank)+']')
                where = [(2,1),(3,0),(3,1)]
                for wh_sub,i in enumerate(wh_to_plot_Xs):
                    plt.subplot2grid(grid_size, where[wh_sub]) # X^*
-                   plt.plot(X_s_1t_trace[i,:], color='gray', linestyle='solid')
-                   plt.ylabel(r'$X^*$'+'['+str(i)+","+str(rank)+']')        
+                   plt.plot(Z_1t_trace[i,:], color='gray', linestyle='solid')
+                   plt.ylabel(r'$Z$'+'['+str(i)+","+str(rank)+']')        
                plt.tight_layout()
                pdf_pages.savefig(fig)
                pdf_pages.close()                 
@@ -537,7 +547,7 @@ if __name__ == "__main__":
                    dump(initial_values, f)
                    dump(sigma_m, f)
                    dump(iter, f)
-                   dump(X_s_1t_trace, f)
+                   dump(Z_1t_trace, f)
                    dump(R_1t_trace, f)
                    dump(Y_onetime, f)
                    dump(X_onetime, f)

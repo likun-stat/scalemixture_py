@@ -22,8 +22,8 @@ n_t = 64         # Number of time points
 tau_sqd = 10     # Nugget SD
 
 delta = 0.55       # For R
-prob_below=0.75
-prob_above=0.85
+prob_below=0.9
+prob_above=0.999
 
 
 # -------------- 2. Generate covariance matrix -----------------
@@ -39,20 +39,19 @@ V = eig_Cor[1]
 d = eig_Cor[0]
 
 R = utils.rPareto(n_t,1,1)
-R=R**(delta/(1-delta))
 X = np.empty((n_s,n_t))
 X[:] = np.nan
 X_s = np.empty((n_s,n_t))
 X_s[:] = np.nan
-Z_all = np.empty((n_s,n_t))
-Z_all[:] = np.nan
+Z = np.empty((n_s,n_t))
+Z[:] = np.nan
 for idx, r in enumerate(R):
   Z_t = utils.eig2inv_times_vector(V, np.sqrt(d), norm.rvs(size=n_s))
   Z_to_W_s = 1/(1-norm.cdf(Z_t))
-  tmp = r*Z_to_W_s
+  tmp = (r**(delta/(1-delta)))*Z_to_W_s
   X_s[: ,idx] = tmp
   X[:,idx] = tmp + np.sqrt(tau_sqd)*norm.rvs(size=n_s)
-  Z_all[:,idx] = Z_t
+  Z[:,idx] = Z_t
 
 
 # ------------ 3. Marginal transformation -----------------
@@ -101,7 +100,7 @@ initial_values = {'delta':delta,
                     'Dist':S,
                     'theta_c':np.array([range,nu]),
                     'X':X,
-                    'X_s':X_s,
+                    'Z':Z,
                     'R':R,
                     'Design_mat':Design_mat,
                     'beta_loc0':beta_loc0,
@@ -114,7 +113,7 @@ n_updates = 1001
 sigma_m = {'delta':2.4**2,
              'tau_sqd':2.4**2,
              'theta_c':2.4**2/2,
-             'X_s_onetime':np.repeat(np.sqrt(tau_sqd),n_s),
+             'Z_onetime':np.repeat(np.sqrt(tau_sqd),n_s),
              'R_1t':2.4**2,
              'beta_loc0':2.4**2/n_covariates,
              'beta_loc1':2.4**2/n_covariates,
@@ -147,9 +146,9 @@ with open('./test_scalemix.pkl', 'wb') as f:
 ## ----------------------- For delta -----------------------
 ## ---------------------------------------------------------
 def test(delta):
-    return utils.delta_update_mixture_me_likelihood(R, delta, Y, X_s, cen, cen_above, prob_below, prob_above,
+    return utils.delta_update_mixture_me_likelihood(Y, delta, R, Z, cen, cen_above, prob_below, prob_above,
                                        Loc, Scale, Shape, tau_sqd)
-Delta = np.arange(0.535,0.56,step=0.001)
+Delta = np.arange(0.54,0.56,step=0.001)
 Lik = np.zeros(len(Delta))
 for idx, delt in enumerate(Delta):
     Lik[idx] = test(delt)
@@ -160,20 +159,20 @@ plt.axvline(0.55, color='r', linestyle='--');
 # cProfile.run('Res = sampler.static_metr(R, 0.55, utils.delta_update_mixture_me_likelihood, priors.interval_unif, np.array([0.1,0.7]),1000, np.nan, 0.005, True, Y, X_s, cen, prob_below, Loc, Scale, Shape, tau_sqd)')
 
 random_generator = np.random.RandomState()
-Res = sampler.static_metr(R, 0.55, utils.delta_update_mixture_me_likelihood, priors.interval_unif, 
+Res = sampler.static_metr(Y, 0.55, utils.delta_update_mixture_me_likelihood, priors.interval_unif, 
                   np.array([0.1,0.7]),1000, 
                   random_generator,
                   np.nan, 5.3690987e-03, True, 
-                  Y, X_s, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, tau_sqd)
+                  R, Z, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, tau_sqd)
 plt.plot(np.arange(1000),Res['trace'][0,:],linestyle='solid')
 
 
-Res = sampler.adaptive_metr(R, 0.55, utils.delta_update_mixture_me_likelihood, priors.interval_unif, 
+Res = sampler.adaptive_metr(Y, 0.55, utils.delta_update_mixture_me_likelihood, priors.interval_unif, 
                           np.array([0.1,0.7]),5000,
                           random_generator,
                           np.nan, False, False,
                           .234, 10, .8, 10, 
-                           Y, X_s, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, tau_sqd)
+                          R, Z, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, tau_sqd)
 plt.plot(np.arange(5000),Res['trace'][0,:],linestyle='solid')
 plt.hlines(0.55, 0, 5000, colors='r', linestyles='--');
 
@@ -531,7 +530,7 @@ plt.colorbar();
 
 # 1, 1.5
 def test(x):
-    return utils.theta_c_update_mixture_me_likelihood(R, np.array([x,1.5]), X_s, S)
+    return utils.theta_c_update_mixture_me_likelihood(Z, np.array([x,1.5]), S)
 
 Range = np.arange(0.5,1.3,step=0.01)
 Lik = np.zeros(len(Range))
@@ -541,7 +540,7 @@ plt.plot(Range, Lik, linestyle='solid')
 
 
 def test(x):
-    return utils.theta_c_update_mixture_me_likelihood(R, np.array([1,x]), X_s, S)
+    return utils.theta_c_update_mixture_me_likelihood(Z, np.array([1,x]), S)
 
 Nu = np.arange(0.9,1.8,step=0.01)
 Lik = np.zeros(len(Nu))
@@ -550,12 +549,12 @@ for idx, r in enumerate(Nu):
 plt.plot(Nu, Lik, linestyle='solid')
 
 
-Res = sampler.adaptive_metr(R, np.array([1,1.5]), utils.theta_c_update_mixture_me_likelihood, 
+Res = sampler.adaptive_metr(Z, np.array([1,1.5]), utils.theta_c_update_mixture_me_likelihood, 
                             priors.unif_prior, 20, 5000, 
                             random_generator,
                             np.nan, True,
                             False, .234, 10, .8,  10,
-                            X_s, S)
+                            S)
 
 plt.plot(np.arange(5000),Res['trace'][0,:], color='gray',linestyle='solid')
 plt.hlines(1, 0, 5000, colors='r', linestyles='--');
@@ -588,34 +587,31 @@ plt.colorbar();
 ## ------------------------ For Rt -----------------------
 ## -------------------------------------------------------
 
-# R[0] = 1.27
+t_chosen = 6
 def test(x):
-    return utils.Rt_update_mixture_me_likelihood(X_s[:,0], x, delta, V, d)
+    return utils.Rt_update_mixture_me_likelihood(Y[:,t_chosen], x, X[:,t_chosen], Z[:,t_chosen], 
+                cen[:,t_chosen], cen_above[:,t_chosen], prob_below, prob_above, 
+                Loc[:,t_chosen], Scale[:,t_chosen], Shape[:,t_chosen], delta, tau_sqd,
+                thresh_X, thresh_X_above)
 
-Rt = np.arange(0.9,1.6,step=0.01)
+Rt = np.arange(R[t_chosen]-1,R[t_chosen]+1,step=0.01)
 Lik = np.zeros(len(Rt))
 for idx, r in enumerate(Rt):
     Lik[idx] = test(r) 
 plt.plot(Rt, Lik, linestyle='solid')
 
-# R[2] = 4.45
-def test(x):
-    return utils.Rt_update_mixture_me_likelihood(X_s[:,2], x, delta, V, d)
 
-Rt = np.arange(4.3,5.2,step=0.01)
-Lik = np.zeros(len(Rt))
-for idx, r in enumerate(Rt):
-    Lik[idx] = test(r) 
-plt.plot(Rt, Lik, linestyle='solid')
-plt.axvline(4.45, color='r', linestyle='--');
-
-Res = sampler.static_metr(X_s[:,2], 4.5, utils.Rt_update_mixture_me_likelihood, 
-                          priors.huser_wadsworth_prior, delta, 5000, 
+Res = sampler.adaptive_metr(Y[:,t_chosen], R[t_chosen]-.1, utils.Rt_update_mixture_me_likelihood, 
+                          priors.R_prior, 1, 5000, 
                           random_generator,
-                          np.nan, 0.5, True, 
-                          delta, V, d)
+                          np.nan, True,
+                          False, .234, 10, .8,  10, 
+                          X[:,t_chosen], Z[:,t_chosen], 
+                          cen[:,t_chosen], cen_above[:,t_chosen], prob_below, prob_above, 
+                          Loc[:,t_chosen], Scale[:,t_chosen], Shape[:,t_chosen], delta, tau_sqd,
+                          thresh_X, thresh_X_above)
 plt.plot(np.arange(5000),Res['trace'][0,:],linestyle='solid')
-plt.hlines(R[2], 0, 5000, colors='r', linestyles='--');
+plt.hlines(R[t_chosen], 0, 5000, colors='r', linestyles='--');
 
 
 
@@ -625,35 +621,38 @@ plt.hlines(R[2], 0, 5000, colors='r', linestyles='--');
 ## -------------------------------------------------------
 
 t_chosen = 3; idx = 47
-prop_X_s = np.empty(n_s)
-prop_X_s[:] = X_s[:,t_chosen]
+prop_Z= np.empty(n_s)
+prop_Z[:] = Z[:,t_chosen]
 def test(x):
-    prop_X_s[idx] =x
-    return utils.marg_transform_data_mixture_me_likelihood_uni(Y[idx, t_chosen], X[idx, t_chosen], x, 
+    prop_Z[idx] =x
+    prop_X_s_idx = (R[t_chosen]**(delta/(1-delta)))*utils.norm_to_Pareto(x)
+    return utils.marg_transform_data_mixture_me_likelihood_uni(Y[idx, t_chosen], X[idx, t_chosen], prop_X_s_idx, 
                        cen[idx, t_chosen], cen_above[idx, t_chosen], prob_below, prob_above, Loc[idx, t_chosen], Scale[idx, t_chosen], Shape[idx, t_chosen], delta, tau_sqd, 
-                       thresh_X, thresh_X_above) + utils.X_s_likelihood_conditional(prop_X_s, R[t_chosen], V, d)
-Xst = np.arange(90,200,step=0.01)
-Lik = np.zeros(len(Xst))
-for idy, x in enumerate(Xst):
+                       thresh_X, thresh_X_above) + utils.Z_likelihood_conditional(prop_Z, V, d)
+Zt = np.arange(Z[idx,t_chosen]-2,Z[idx,t_chosen]+1,step=0.01)
+Lik = np.zeros(len(Zt))
+for idy, x in enumerate(Zt):
     Lik[idy] = test(x) 
-plt.plot(Xst, Lik, linestyle='solid')
-plt.axvline(X_s[idx, t_chosen], color='r', linestyle='--');
+plt.plot(Zt, Lik, linestyle='solid')
+plt.axvline(Z[idx, t_chosen], color='r', linestyle='--');
 
 
 n_updates = 5000
-X_s_trace = np.empty((3,n_updates))
+Z_trace = np.empty((3,n_updates))
 
-X_s_new = np.empty(n_s)
-X_s_new[:] = X_s[:, t_chosen]
+Z_new = np.empty(n_s)
+Z_new[:] = Z[:, t_chosen]
 K=10; k=3
 r_opt = .234; c_0 = 10; c_1 = .8
 accept = np.zeros(n_s)
 Sigma_m = np.repeat(np.sqrt(tau_sqd),n_s)
+
+random_generator = np.random.RandomState()
 for idx in np.arange(n_updates):
-    tmp = utils.X_s_update_onetime(Y[:,t_chosen], X[:,t_chosen], X_s_new, cen[:,t_chosen], cen_above[:, t_chosen], prob_below, prob_above,
-                                   Loc[:,t_chosen], Scale[:,t_chosen], Shape[:,t_chosen], delta, tau_sqd, thresh_X, thresh_X_above,
-                                   R[t_chosen], V, d, Sigma_m, random_generator)
-    X_s_trace[:,idx] = np.array([X_s_new[32],X_s_new[58],X_s_new[47]])
+    tmp = utils.Z_update_onetime(Y[:,t_chosen], X[:,t_chosen], R[t_chosen], Z_new, cen[:,t_chosen], cen_above[:, t_chosen], prob_below, prob_above,
+                                   delta, tau_sqd, Loc[:,t_chosen], Scale[:,t_chosen], Shape[:,t_chosen], thresh_X, thresh_X_above,
+                                   V, d, Sigma_m, random_generator)
+    Z_trace[:,idx] = np.array([Z_new[32],Z_new[58],Z_new[47]])
     accept = accept + tmp
     
     if (idx % K) == 0:
@@ -665,14 +664,14 @@ for idx in np.arange(n_updates):
         accept[:] = 0
 
 
-plt.plot(np.arange(n_updates),X_s_trace[0,:],linestyle='solid')
-plt.hlines(X_s[32, t_chosen], 0, n_updates, colors='r', linestyles='--');
+plt.plot(np.arange(n_updates),Z_trace[0,:],linestyle='solid')
+plt.hlines(Z[32, t_chosen], 0, n_updates, colors='r', linestyles='--');
 
-plt.plot(np.arange(n_updates),X_s_trace[1,:],linestyle='solid')
-plt.hlines(X_s[58, t_chosen], 0, n_updates, colors='r', linestyles='--');
+plt.plot(np.arange(n_updates),Z_trace[1,:],linestyle='solid')
+plt.hlines(Z[58, t_chosen], 0, n_updates, colors='r', linestyles='--');
 
-plt.plot(np.arange(n_updates),X_s_trace[2,:],linestyle='solid')
-plt.hlines(X_s[47, t_chosen], 0, n_updates, colors='r', linestyles='--');
+plt.plot(np.arange(n_updates),Z_trace[2,:],linestyle='solid')
+plt.hlines(Z[47, t_chosen], 0, n_updates, colors='r', linestyles='--');
 
 
 
