@@ -514,6 +514,13 @@ def eig2inv_times_vector(V, d_inv, x):
   return V@np.diag(d_inv)@V.T@x
 
 
+## Computes y=A^{-1}x via solving linear system Ay=x
+from scipy.linalg import lapack
+def inv_times_vector(A, x):
+  inv = lapack.dposv(A,x)
+  return inv
+
+
 ## Assumes that A = VDV', where D is a diagonal vector of eigenvectors of A, and
 ## V is a matrix of normalized eigenvectors of A.
 ##
@@ -538,7 +545,20 @@ def dmvn_eig(R, V, d_inv, mean=0):
   res = -0.5*n_rep*eig2logdet(1/d_inv) - 0.5 * np.sum((R-mean) * eig2inv_times_vector(V, d_inv, R-mean))
   return res
 
-
+def dmvn(R, Cor, mean=0, cholesky_inv = None):## cholesky_inv is the output of inv_times_vector()
+  if len(R.shape)==1: 
+    n_rep = 1 
+  else: 
+    n_rep = R.shape[1]
+    
+  if cholesky_inv is None: 
+      inv = lapack.dposv(Cor, R-mean)
+  else:
+      sol = lapack.dpotrs(cholesky_inv[0],R-mean) #Solve Ax = b using factorization
+      inv = (cholesky_inv[0],sol[0])
+  logdet = 2*sum(np.log(np.diag(inv[0])))
+  res = -0.5*n_rep*logdet - 0.5 * np.sum((R-mean) * inv[1])
+  return res
 
 ## Assumes that A = VDV', where D is a diagonal vector of eigenvectors of A, and
 ## V is a matrix of normalized eigenvectors of A.
@@ -547,6 +567,15 @@ def dmvn_eig(R, V, d_inv, mean=0):
 ##
 def eig2inv_quadform_vector(V, d_inv, x):
   cp = V@np.diag(d_inv)@V.T@x
+  return sum(x*cp)
+
+def inv_quadform_vector(Cor, x, cholesky_inv = None):
+  if cholesky_inv is None:
+      inv = lapack.dposv(Cor, x)
+      cp = inv[1]
+  else:
+      sol = lapack.dpotrs(cholesky_inv[0],x) #Solve Ax = b using factorization
+      cp = sol[0]
   return sum(x*cp)
 
 ##
@@ -767,14 +796,20 @@ def X_s_update_onetime(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc, S
 
 
 
-def Z_likelihood_conditional(Z, V, d):
+def Z_likelihood_conditional_eigen(Z, V, d):
     # R_powered = R**phi
     part1 = -0.5*eig2inv_quadform_vector(V, 1/d, Z)-0.5*np.sum(np.log(d))
     return part1
 
+def Z_likelihood_conditional(Z, Cor, cholesky_inv):
+    # R_powered = R**phi
+    part1 = -0.5*inv_quadform_vector(Cor, Z, cholesky_inv)-0.5*2*sum(np.log(np.diag(cholesky_inv[0])))
+    return part1
+
+
 def Z_update_onetime(Y, X, R, Z, cen, cen_above, prob_below, prob_above,
                 delta, tau_sqd, Loc, Scale, Shape, thresh_X, thresh_X_above, 
-                V, d, Sigma_m, random_generator):
+                Cor, cholesky_inv, Sigma_m, random_generator):
     
     n_s = X.size
     prop_Z = np.empty(X.shape)
@@ -793,10 +828,10 @@ def Z_update_onetime(Y, X, R, Z, cen, cen_above, prob_below, prob_above,
         
         log_num = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], prop_X_s_idx, 
                        cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd,  
-                       thresh_X, thresh_X_above) + Z_likelihood_conditional(prop_Z, V, d);
+                       thresh_X, thresh_X_above) + Z_likelihood_conditional(prop_Z, Cor, cholesky_inv,);
         log_denom = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], X_s[idx], 
                        cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd, 
-                       thresh_X, thresh_X_above) + Z_likelihood_conditional(Z, V, d);
+                       thresh_X, thresh_X_above) + Z_likelihood_conditional(Z, Cor, cholesky_inv,);
         
         with np.errstate(over='raise'):
             try:
@@ -920,7 +955,7 @@ def tau_update_mixture_me_likelihood(data, params, X_s, cen, cen_above, prob_bel
 ## mixing distribution comes from Huser-wadsworth scale mixture.
 ##
 ##
-def theta_c_update_mixture_me_likelihood(data, params, S, V=np.nan, d=np.nan):
+def theta_c_update_mixture_me_likelihood_eigen(data, params, S, V=np.nan, d=np.nan):
   Z = data
   range = params[0]
   nu = params[1]
@@ -941,7 +976,7 @@ def theta_c_update_mixture_me_likelihood(data, params, S, V=np.nan, d=np.nan):
   return np.sum(ll)
 
 
-def range_update_mixture_me_likelihood(data, params, nu, S, V=np.nan, d=np.nan):
+def range_update_mixture_me_likelihood_eigen(data, params, nu, S, V=np.nan, d=np.nan):
   Z = data
   range = params
   
@@ -961,6 +996,41 @@ def range_update_mixture_me_likelihood(data, params, nu, S, V=np.nan, d=np.nan):
     ll[idx] = Z_likelihood_conditional(Z[:,idx], V, d)
   return np.sum(ll)
 
+def theta_c_update_mixture_me_likelihood(data, params, S, Cor=None, cholesky_inv=None):
+  Z = data
+  range = params[0]
+  nu = params[1]
+  if len(Z.shape)==1:
+      Z = Z.reshape((Z.shape[0],1))
+  n_t = Z.shape[1]
+  
+  if Cor is None:
+    Cor = corr_fn(S, np.array([range,nu]))
+    cholesky_inv = lapack.dposv(Cor,Z[:,0])
+
+  ll = np.empty(n_t)
+  ll[:]=np.nan
+  for idx in np.arange(n_t):
+    ll[idx] = Z_likelihood_conditional(Z[:,idx], Cor, cholesky_inv)
+  return np.sum(ll)
+
+def range_update_mixture_me_likelihood(data, params, nu, S, Cor=None, cholesky_inv=None):
+  Z = data
+  range = params
+  
+  if len(Z.shape)==1:
+      Z = Z.reshape((Z.shape[0],1))
+  n_t = Z.shape[1]
+  
+  if Cor is None:
+    Cor = corr_fn(S, np.array([range,nu]))
+    cholesky_inv = lapack.dposv(Cor,Z[:,0])
+
+  ll = np.empty(n_t)
+  ll[:]=np.nan
+  for idx in np.arange(n_t):
+    ll[idx] = Z_likelihood_conditional(Z[:,idx], Cor, cholesky_inv)
+  return np.sum(ll)
 ##
 ## -------------------------------------------------------------------------- ##
 
