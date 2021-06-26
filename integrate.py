@@ -1322,13 +1322,14 @@ def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clust
     current_params = loc0[which]
     current_mean = loc0_mean[which]
     n_current_cluster = len(current_params)
+    accept = 0
     
     # 2. Propose parameters 
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc0_cluster[0][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_loc0_cluster[0][0].T , tmp_parmas_star)
+    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(inv_loc0_cluster[cluster_num][0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
-    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc0_cluster[0][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
+    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
     loc0_star = np.empty(loc0.shape[0]); loc0_star[:] = loc0
@@ -1403,13 +1404,14 @@ def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clust
     current_params = loc1[which]
     current_mean = loc1_mean[which]
     n_current_cluster = len(current_params)
+    accept = 0
     
     # 2. Propose parameters 
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc1_cluster[0][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_loc1_cluster[0][0].T , tmp_parmas_star)
+    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(inv_loc1_cluster[cluster_num][0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
-    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc1_cluster[0][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
+    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
     loc1_star = np.empty(loc1.shape[0]); loc1_star[:] = loc1
@@ -1485,13 +1487,14 @@ def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_cl
     current_params = scale[which]
     current_mean = scale_mean[which]
     n_current_cluster = len(current_params)
+    accept = 0
     
     # 2. Propose parameters 
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_scale_cluster[0][0].T) , np.log(current_params)) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    log_params_star = np.matmul(inv_scale_cluster[0][0].T , tmp_parmas_star)
+    tmp_parmas_star = np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , np.log(current_params)) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    log_params_star = np.matmul(inv_scale_cluster[cluster_num][0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
-    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_scale_cluster[0][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
+    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
     scale_star = np.empty(scale.shape[0]); scale_star[:] = scale
@@ -1567,13 +1570,14 @@ def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_cl
     current_params = shape[which]
     current_mean = shape_mean[which]
     n_current_cluster = len(current_params)
+    accept = 0
     
     # 2. Propose parameters 
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_shape_cluster[0][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_shape_cluster[0][0].T , tmp_parmas_star)
+    tmp_parmas_star = np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(inv_shape_cluster[cluster_num][0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
-    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_shape_cluster[0][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
+    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
     shape_star = np.empty(shape.shape[0]); shape_star[:] = shape

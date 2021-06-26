@@ -406,13 +406,13 @@ if __name__ == "__main__":
             
            
            # Update theta_c_loc0
-           Metr_theta_c_loc0 = sampler.static_metr(loc0, beta_loc0[0], utils.theta_c_param_updata_me_likelihood, 
-                             priors.interval_unif, hyper_params_beta_loc0, 2,
+           Metr_theta_c_loc0 = sampler.static_metr(loc0, theta_c_loc0[0], utils.theta_c_param_updata_me_likelihood, 
+                             priors.interval_unif, hyper_params_theta_c_loc0, 2,
                              random_generator,
                              np.nan, sigma_m['theta_c_loc0'], False, 
-                             beta_loc0[1], loc0_mean, Cluster_which, S_clusters)
+                             theta_c_loc0[1], loc0_mean, Cluster_which, S_clusters)
            theta_c_loc0_accept = theta_c_loc0_accept + Metr_theta_c_loc0['acc_prob']
-           theta_c_loc0[0] = Metr_theta_c_loc0['trace'][1]
+           theta_c_loc0[0] = Metr_theta_c_loc0['trace'][0,1]
            if Metr_theta_c_loc0['acc_prob']>0:
                Cor_loc0_clusters=list()
                inv_loc0_cluster=list()
@@ -424,13 +424,13 @@ if __name__ == "__main__":
            
             
            # Update theta_c_loc1
-           Metr_theta_c_loc1 = sampler.static_metr(loc1, beta_loc1[0], utils.theta_c_param_updata_me_likelihood, 
-                             priors.interval_unif, hyper_params_beta_loc1, 2,
+           Metr_theta_c_loc1 = sampler.static_metr(loc1, theta_c_loc1[0], utils.theta_c_param_updata_me_likelihood, 
+                             priors.interval_unif, hyper_params_theta_c_loc1, 2,
                              random_generator,
                              np.nan, sigma_m['theta_c_loc1'], False, 
-                             beta_loc1[1], loc1_mean, Cluster_which, S_clusters)
+                             theta_c_loc1[1], loc1_mean, Cluster_which, S_clusters)
            theta_c_loc1_accept = theta_c_loc1_accept + Metr_theta_c_loc1['acc_prob']
-           theta_c_loc1[0] = Metr_theta_c_loc1['trace'][1]
+           theta_c_loc1[0] = Metr_theta_c_loc1['trace'][0,1]
            if Metr_theta_c_loc1['acc_prob']>0:
                Cor_loc1_clusters=list()
                inv_loc1_cluster=list()
@@ -441,13 +441,13 @@ if __name__ == "__main__":
                    inv_loc1_cluster.append(cholesky_inv)
                    
            # Update theta_c_scale
-           Metr_theta_c_scale = sampler.static_metr(scale, beta_scale[0], utils.theta_c_param_updata_me_likelihood, 
-                             priors.interval_unif, hyper_params_beta_scale, 2,
+           Metr_theta_c_scale = sampler.static_metr(scale, theta_c_scale[0], utils.theta_c_param_updata_me_likelihood, 
+                             priors.interval_unif, hyper_params_theta_c_scale, 2,
                              random_generator,
                              np.nan, sigma_m['theta_c_scale'], False, 
-                             beta_scale[1], scale_mean, Cluster_which, S_clusters)
+                             theta_c_scale[1], scale_mean, Cluster_which, S_clusters)
            theta_c_scale_accept = theta_c_scale_accept + Metr_theta_c_scale['acc_prob']
-           theta_c_scale[0] = Metr_theta_c_scale['trace'][1]
+           theta_c_scale[0] = Metr_theta_c_scale['trace'][0,1]
            if Metr_theta_c_scale['acc_prob']>0:
                Cor_scale_clusters=list()
                inv_scale_cluster=list()
@@ -458,13 +458,13 @@ if __name__ == "__main__":
                    inv_scale_cluster.append(cholesky_inv)
                    
            # # Update theta_c_shape
-           # Metr_theta_c_shape = sampler.static_metr(shape, beta_shape[0], utils.theta_c_param_updata_me_likelihood, 
-           #                   priors.interval_unif, hyper_params_beta_shape, 2,
-           #                   random_generator,
-           #                   np.nan, sigma_m['theta_c_shape'], False, 
-           #                   beta_shape[1], shape_mean, Cluster_which, S_clusters)
+           # Metr_theta_c_shape = sampler.static_metr(shape, theta_c_shape[0], utils.theta_c_param_updata_me_likelihood, 
+           #                 priors.interval_unif, hyper_params_theta_c_shape, 2,
+           #                 random_generator,
+           #                 np.nan, sigma_m['theta_c_shape'], False, 
+           #                 theta_c_shape[1], shape_mean, Cluster_which, S_clusters)
            # theta_c_shape_accept = theta_c_shape_accept + Metr_theta_c_shape['acc_prob']
-           # theta_c_shape[0] = Metr_theta_c_shape['trace'][1]
+           # theta_c_shape[0] = Metr_theta_c_shape['trace'][0,1]
            # if Metr_theta_c_shape['acc_prob']>0:
            #     Cor_shape_clusters=list()
            #     inv_shape_cluster=list()
