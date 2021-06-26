@@ -153,7 +153,7 @@ if __name__ == "__main__":
    # eig_Cor = np.linalg.eigh(Cor) #For symmetric matrices
    # V = eig_Cor[1]
    # d = eig_Cor[0]
-   cholesky_inv = lapack.dposv(Cor,tmp_vec)
+   cholesky_inv_all = lapack.dposv(Cor,tmp_vec)
    thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
    thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
    
@@ -287,7 +287,7 @@ if __name__ == "__main__":
        # Update Z
        tmp = utils.Z_update_onetime(Y_onetime, X_onetime, R_onetime, Z_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above,
                                     delta, tau_sqd, Loc[:,rank], Scale[:,rank], Shape[:,rank], thresh_X, thresh_X_above,
-                                    Cor, cholesky_inv, sigma_m['Z_onetime'], random_generator)
+                                    Cor, cholesky_inv_all, sigma_m['Z_onetime'], random_generator)
        Z_1t_accept = Z_1t_accept + tmp
       
        # Update R
@@ -355,7 +355,7 @@ if __name__ == "__main__":
                # eig_Cor = np.linalg.eigh(Cor) #For symmetric matrices
                # V = eig_Cor[1]
                # d = eig_Cor[0]
-               cholesky_inv = lapack.dposv(Cor,tmp_vec)
+               cholesky_inv_all = lapack.dposv(Cor,tmp_vec)
            
            # Update beta_loc0 => Gaussian prior mean
            Metr_beta_loc0 = sampler.static_metr(loc0, beta_loc0, utils.beta_param_update_me_likelihood, 
@@ -523,7 +523,7 @@ if __name__ == "__main__":
        # V = comm.bcast(V,root=0)
        # d = comm.bcast(d,root=0)
        Cor = comm.bcast(Cor,root=0)
-       cholesky_inv = comm.bcast(cholesky_inv,root=0)
+       cholesky_inv_all = comm.bcast(cholesky_inv_all,root=0)
        Loc = comm.bcast(Loc,root=0)
        Scale = comm.bcast(Scale,root=0)
        Shape = comm.bcast(Shape,root=0)
