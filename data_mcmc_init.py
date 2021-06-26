@@ -201,11 +201,9 @@ if __name__ == "__main__":
    Loc = np.tile(loc0, n_t) + np.tile(loc1, n_t)*np.repeat(Time,n_s)
    Loc = Loc.reshape((n_s,n_t),order='F')
 
-   scale = Design_mat @beta_scale
    Scale = np.tile(scale, n_t)
    Scale = Scale.reshape((n_s,n_t),order='F')
 
-   shape = Design_mat @beta_shape
    Shape = np.tile(shape, n_t)
    Shape = Shape.reshape((n_s,n_t),order='F')
     
