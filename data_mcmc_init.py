@@ -133,7 +133,7 @@ if __name__ == "__main__":
    theta_c_shape = initial_values['theta_c_shape']
    
    Cluster_which = initial_values['Cluster_which']
-   S_clusters = initial_values['S_Clusters']
+   S_clusters = initial_values['S_clusters']
    
    # Bookkeeping
    n_s = Y.shape[0]
