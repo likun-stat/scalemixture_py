@@ -837,7 +837,7 @@ def Z_update_onetime(Y, X, R, Z, cen, cen_above, prob_below, prob_above,
             try:
                 r = np.exp(log_num - log_denom)  # this gets caught and handled as an exception
             except FloatingPointError:
-                print(" -- idx="+str(idx)+", Z="+str(Z[idx])+", prop_Z="+str(temp)+", log_num="+str(log_num)+", log_denom="+str(log_denom))
+                # print(" -- idx="+str(idx)+", Z="+str(Z[idx])+", prop_Z="+str(temp)+", log_num="+str(log_num)+", log_denom="+str(log_denom))
                 r=1
     
         if random_generator.uniform(0,1,1)<r:
