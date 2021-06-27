@@ -668,7 +668,7 @@ if __name__ == "__main__":
        # -------------------------- Echo & save every 'thinning' steps --------------------------
        # ----------------------------------------------------------------------------------------
        if (iter / thinning) % echo_interval == 0:
-           print(rank, iter)
+           # print(rank, iter)
            if rank == 0:
                print('Done with '+str(index)+" updates while thinned by "+str(thinning)+" steps,\n")
                
@@ -788,7 +788,7 @@ if __name__ == "__main__":
                plt.tight_layout()
                pdf_pages.savefig(fig)
                plt.close()
-               pdf_pages.close() 
+               
 
                #-page-3
                fig = plt.figure(figsize = (8.75, 11.75))
@@ -809,7 +809,7 @@ if __name__ == "__main__":
                plt.ylabel(r'scale'+'['+str(wh_to_plot_Xs[2])+']')
                plt.subplot2grid(grid_size, (2,1)) # mu0: beta_1
                plt.plot(shape_1s_trace[:], color='gray', linestyle='solid')
-               plt.ylabel(r'loc0'+'['+str(wh_to_plot_Xs[2])+']')
+               plt.ylabel(r'shape'+'['+str(wh_to_plot_Xs[2])+']')
                plt.subplot2grid(grid_size, (3,0)) # mu1: beta_0
                plt.plot()
                plt.ylabel(r'blank')
@@ -819,6 +819,7 @@ if __name__ == "__main__":
                plt.tight_layout()
                pdf_pages.savefig(fig)
                plt.close()
+               pdf_pages.close() 
            else:
                with open(filename, 'wb') as f:
                    dump(Y, f)
