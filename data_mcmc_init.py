@@ -225,14 +225,14 @@ if __name__ == "__main__":
      theta_c_trace = np.empty((2,n_updates_thinned)); theta_c_trace[:] = np.nan
      theta_c_trace[:,0] = theta_c
      
-     loc0_1s_trace = np.empty(n_updates_thinned); loc0_1s_trace[:] = np.nan
-     loc0_1s_trace[0] = loc0[wh_to_plot_Xs[2]]
-     loc1_1s_trace = np.empty(n_updates_thinned); loc1_1s_trace[:] = np.nan
-     loc1_1s_trace[0] = loc1[wh_to_plot_Xs[2]]
-     scale_1s_trace = np.empty(n_updates_thinned); scale_1s_trace[:] = np.nan
-     scale_1s_trace[0] = scale[wh_to_plot_Xs[2]]
-     shape_1s_trace = np.empty(n_updates_thinned); shape_1s_trace[:] = np.nan
-     shape_1s_trace[0] = shape[wh_to_plot_Xs[2]]
+     loc0_trace = np.empty((n_updates_thinned,n_s)); loc0_trace[:] = np.nan
+     loc0_trace[0,:] = loc0
+     loc1_trace = np.empty((n_updates_thinned,n_s)); loc1_trace[:] = np.nan
+     loc1_trace[0,:] = loc1
+     scale_trace = np.empty((n_updates_thinned,n_s)); scale_trace[:] = np.nan
+     scale_trace[0,:] = scale
+     shape_trace = np.empty((n_updates_thinned,n_s)); shape_trace[:] = np.nan
+     shape_trace[0,:] = shape
      
      beta_loc0_trace_within_thinning = np.empty((n_covariates,thinning)); beta_loc0_trace_within_thinning[:] = np.nan
      beta_loc0_trace = np.empty((n_covariates,n_updates_thinned)); beta_loc0_trace[:] = np.nan
@@ -251,6 +251,10 @@ if __name__ == "__main__":
      theta_c_loc0_trace[:,0] = theta_c_loc0
      theta_c_loc1_trace = np.empty((2,n_updates_thinned)); theta_c_loc1_trace[:] = np.nan
      theta_c_loc1_trace[:,0] = theta_c_loc1
+     theta_c_scale_trace = np.empty((2,n_updates_thinned)); theta_c_scale_trace[:] = np.nan
+     theta_c_scale_trace[:,0] = theta_c_scale
+     theta_c_shape_trace = np.empty((2,n_updates_thinned)); theta_c_shape_trace[:] = np.nan
+     theta_c_shape_trace[:,0] = theta_c_shape
      
     
      delta_accept = 0
@@ -391,16 +395,16 @@ if __name__ == "__main__":
            scale_mean = Design_mat @beta_scale
            
            
-           # # Update beta_shape => Gaussian prior mean
-           # Metr_beta_shape = sampler.static_metr(shape, beta_shape, utils.beta_param_update_me_likelihood, 
-           #                   priors.unif_prior, hyper_params_beta_shape, 2,
-           #                   random_generator,
-           #                   prop_sigma['beta_shape'], sigma_m['beta_shape'], False, 
-           #                   Design_mat, Cluster_which, Cor_shape_clusters, inv_shape_cluster)
-           # beta_shape_accept = beta_shape_accept + Metr_beta_shape['acc_prob']
-           # beta_shape = Metr_beta_shape['trace'][:,1]
-           # beta_shape_trace_within_thinning[:,index_within] = beta_shape
-           # shape_mean = Design_mat @beta_shape
+           # Update beta_shape => Gaussian prior mean
+           Metr_beta_shape = sampler.static_metr(shape, beta_shape, utils.beta_param_update_me_likelihood, 
+                             priors.unif_prior, hyper_params_beta_shape, 2,
+                             random_generator,
+                             prop_sigma['beta_shape'], sigma_m['beta_shape'], False, 
+                             Design_mat, Cluster_which, Cor_shape_clusters, inv_shape_cluster)
+           beta_shape_accept = beta_shape_accept + Metr_beta_shape['acc_prob']
+           beta_shape = Metr_beta_shape['trace'][:,1]
+           beta_shape_trace_within_thinning[:,index_within] = beta_shape
+           shape_mean = Design_mat @beta_shape
             
            
            # Update theta_c_loc0
@@ -455,22 +459,22 @@ if __name__ == "__main__":
                    Cor_scale_clusters.append(Cor_tmp)
                    inv_scale_cluster.append(cholesky_inv)
                    
-           # # Update theta_c_shape
-           # Metr_theta_c_shape = sampler.static_metr(shape, theta_c_shape[0], utils.theta_c_param_updata_me_likelihood, 
-           #                 priors.interval_unif, hyper_params_theta_c_shape, 2,
-           #                 random_generator,
-           #                 np.nan, sigma_m['theta_c_shape'], False, 
-           #                 theta_c_shape[1], shape_mean, Cluster_which, S_clusters)
-           # theta_c_shape_accept = theta_c_shape_accept + Metr_theta_c_shape['acc_prob']
-           # theta_c_shape[0] = Metr_theta_c_shape['trace'][0,1]
-           # if Metr_theta_c_shape['acc_prob']>0:
-           #     Cor_shape_clusters=list()
-           #     inv_shape_cluster=list()
-           #     for i in np.arange(n_clusters):
-           #         Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_shape)
-           #         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
-           #         Cor_shape_clusters.append(Cor_tmp)
-           #         inv_shape_cluster.append(cholesky_inv)
+           # Update theta_c_shape
+           Metr_theta_c_shape = sampler.static_metr(shape, theta_c_shape[0], utils.theta_c_param_updata_me_likelihood, 
+                            priors.interval_unif, hyper_params_theta_c_shape, 2,
+                            random_generator,
+                            np.nan, sigma_m['theta_c_shape'], False, 
+                            theta_c_shape[1], shape_mean, Cluster_which, S_clusters)
+           theta_c_shape_accept = theta_c_shape_accept + Metr_theta_c_shape['acc_prob']
+           theta_c_shape[0] = Metr_theta_c_shape['trace'][0,1]
+           if Metr_theta_c_shape['acc_prob']>0:
+               Cor_shape_clusters=list()
+               inv_shape_cluster=list()
+               for i in np.arange(n_clusters):
+                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_shape)
+                   cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
+                   Cor_shape_clusters.append(Cor_tmp)
+                   inv_shape_cluster.append(cholesky_inv)
             
             
            # Update loc0
@@ -499,14 +503,14 @@ if __name__ == "__main__":
            Scale = Scale.reshape((n_s,n_t),order='F')
             
             
-           # # Update shape
-           # for cluster_num in np.arange(n_clusters):
-           #     shape_accept[cluster_num] += utils.update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster, 
-           #                                                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
-           #                                                                  Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean, 
-           #                                                                  sigma_m_shape_cluster[cluster_num], random_generator)
-           # Shape = np.tile(Shape, n_t)
-           # Shape = Shape.reshape((n_s,n_t),order='F')
+           # Update shape
+           for cluster_num in np.arange(n_clusters):
+               shape_accept[cluster_num] += utils.update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster, 
+                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
+                                                                            Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean, 
+                                                                            sigma_m_shape_cluster[cluster_num], random_generator)
+           Shape = np.tile(Shape, n_t)
+           Shape = Shape.reshape((n_s,n_t),order='F')
           
            # cen[:] = utils.which_censored(Y, Loc, Scale, Shape, prob_below)
            # cen_above[:] = utils.which_censored(Y, Loc, Scale, Shape, prob_above)
@@ -548,11 +552,13 @@ if __name__ == "__main__":
                beta_shape_trace[:,index] = beta_shape
                theta_c_loc0_trace[:,index] = theta_c_loc0
                theta_c_loc1_trace[:,index] = theta_c_loc1
+               theta_c_scale_trace[:,index] = theta_c_scale
+               theta_c_shape_trace[:,index] = theta_c_shape
                
-               loc0_1s_trace[index] = loc0[wh_to_plot_Xs[2]]
-               loc1_1s_trace[index] = loc1[wh_to_plot_Xs[2]]
-               scale_1s_trace[index] = scale[wh_to_plot_Xs[2]]
-               shape_1s_trace[index] = shape[wh_to_plot_Xs[2]]
+               loc0_trace[index,:] = loc0
+               loc1_trace[index,:] = loc1
+               scale_trace[index,:] = scale
+               shape_trace[index,:] = shape
           
             
            # Adapt via Shaby and Wells (2010)
@@ -625,20 +631,20 @@ if __name__ == "__main__":
                        prop_sigma['beta_scale'] = prop_sigma['beta_scale'] + eps*np.eye(n_covariates)
                        print("Oops. Proposal covariance matrix is now:\n")
                        print(prop_sigma['beta_scale'])
-                 
-               # sigma_m['beta_shape'] = np.exp(np.log(sigma_m['beta_shape']) + gamma1*(beta_shape_accept/thinning - r_opt_2d))
-               # beta_shape_accept = 0
-               # prop_sigma['beta_shape'] = prop_sigma['beta_shape'] + gamma2*(np.cov(beta_shape_trace_within_thinning) - prop_sigma['beta_shape'])
-               # check_chol_cont = True
-               # while check_chol_cont:
-               #     try:
-               #         # Initialize prop_C
-               #         np.linalg.cholesky(prop_sigma['beta_shape'])
-               #         check_chol_cont = False
-               #     except  np.linalg.LinAlgError:
-               #         prop_sigma['beta_shape'] = prop_sigma['beta_shape'] + eps*np.eye(n_covariates)
-               #         print("Oops. Proposal covariance matrix is now:\n")
-               #         print(prop_sigma['beta_shape'])
+                
+               sigma_m['beta_shape'] = np.exp(np.log(sigma_m['beta_shape']) + gamma1*(beta_shape_accept/thinning - r_opt_2d))
+               beta_shape_accept = 0
+               prop_sigma['beta_shape'] = prop_sigma['beta_shape'] + gamma2*(np.cov(beta_shape_trace_within_thinning) - prop_sigma['beta_shape'])
+               check_chol_cont = True
+               while check_chol_cont:
+                   try:
+                       # Initialize prop_C
+                       np.linalg.cholesky(prop_sigma['beta_shape'])
+                       check_chol_cont = False
+                   except  np.linalg.LinAlgError:
+                       prop_sigma['beta_shape'] = prop_sigma['beta_shape'] + eps*np.eye(n_covariates)
+                       print("Oops. Proposal covariance matrix is now:\n")
+                       print(prop_sigma['beta_shape'])
                
                sigma_m['theta_c_loc0'] = np.exp(np.log(sigma_m['theta_c_loc0']) + gamma1*(theta_c_loc0_accept/thinning - r_opt_1d))
                theta_c_loc0_accept = 0
@@ -716,11 +722,13 @@ if __name__ == "__main__":
                    dump(beta_shape_trace, f)
                    dump(theta_c_loc0,f)
                    dump(theta_c_loc1,f)
+                   dump(theta_c_scale,f)
+                   dump(theta_c_shape,f)
                    
-                   dump(loc0_1s_trace,f)
-                   dump(loc1_1s_trace,f)
-                   dump(scale_1s_trace,f)
-                   dump(shape_1s_trace,f)
+                   dump(loc0_trace,f)
+                   dump(loc1_trace,f)
+                   dump(scale_trace,f)
+                   dump(shape_trace,f)
                    
                    dump(Z_1t_trace, f)
                    dump(R_1t_trace, f)
@@ -799,16 +807,16 @@ if __name__ == "__main__":
                plt.plot(theta_c_loc1_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(loc1)$')
                plt.subplot2grid(grid_size, (1,0)) # rho
-               plt.plot(loc0_1s_trace[:], color='gray', linestyle='solid')
+               plt.plot(loc0_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'loc0'+'['+str(wh_to_plot_Xs[2])+']')
                plt.subplot2grid(grid_size, (1,1)) # nu
-               plt.plot(loc1_1s_trace[:], color='gray', linestyle='solid')
+               plt.plot(loc1_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'loc1'+'['+str(wh_to_plot_Xs[2])+']')
                plt.subplot2grid(grid_size, (2,0)) # mu0: beta_0
-               plt.plot(scale_1s_trace[:], color='gray', linestyle='solid')
+               plt.plot(scale_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'scale'+'['+str(wh_to_plot_Xs[2])+']')
                plt.subplot2grid(grid_size, (2,1)) # mu0: beta_1
-               plt.plot(shape_1s_trace[:], color='gray', linestyle='solid')
+               plt.plot(shape_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'shape'+'['+str(wh_to_plot_Xs[2])+']')
                plt.subplot2grid(grid_size, (3,0)) # mu1: beta_0
                plt.plot()
