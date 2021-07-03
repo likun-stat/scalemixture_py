@@ -443,7 +443,7 @@ if __name__ == "__main__":
                    inv_loc1_cluster.append(cholesky_inv)
                    
            # Update theta_c_scale
-           Metr_theta_c_scale = sampler.static_metr(scale, theta_c_scale[0], utils.theta_c_param_updata_me_likelihood, 
+           Metr_theta_c_scale = sampler.static_metr(np.log(scale), theta_c_scale[0], utils.theta_c_param_updata_me_likelihood, 
                              priors.interval_unif, hyper_params_theta_c_scale, 2,
                              random_generator,
                              np.nan, sigma_m['theta_c_scale'], False, 
@@ -806,24 +806,24 @@ if __name__ == "__main__":
                plt.subplot2grid(grid_size, (0,1)) 
                plt.plot(theta_c_loc1_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(loc1)$')
-               plt.subplot2grid(grid_size, (1,0)) # rho
+               plt.subplot2grid(grid_size, (1,0)) 
+               plt.plot(theta_c_scale_trace[0,:], color='gray', linestyle='solid')
+               plt.ylabel(r'$\theta_c(scale)$')
+               plt.subplot2grid(grid_size, (1,1)) 
+               plt.plot(theta_c_shape_trace[0,:], color='gray', linestyle='solid')
+               plt.ylabel(r'$\theta_c(shape)$')
+               plt.subplot2grid(grid_size, (2,0)) # rho
                plt.plot(loc0_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'loc0'+'['+str(wh_to_plot_Xs[2])+']')
-               plt.subplot2grid(grid_size, (1,1)) # nu
+               plt.subplot2grid(grid_size, (2,1)) # nu
                plt.plot(loc1_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'loc1'+'['+str(wh_to_plot_Xs[2])+']')
-               plt.subplot2grid(grid_size, (2,0)) # mu0: beta_0
+               plt.subplot2grid(grid_size, (3,0)) # mu0: beta_0
                plt.plot(scale_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'scale'+'['+str(wh_to_plot_Xs[2])+']')
-               plt.subplot2grid(grid_size, (2,1)) # mu0: beta_1
+               plt.subplot2grid(grid_size, (3,1)) # mu0: beta_1
                plt.plot(shape_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'shape'+'['+str(wh_to_plot_Xs[2])+']')
-               plt.subplot2grid(grid_size, (3,0)) # mu1: beta_0
-               plt.plot()
-               plt.ylabel(r'blank')
-               plt.subplot2grid(grid_size, (3,1)) # mu1: beta_1
-               plt.plot()
-               plt.ylabel(r'blank')
                plt.tight_layout()
                pdf_pages.savefig(fig)
                plt.close()
