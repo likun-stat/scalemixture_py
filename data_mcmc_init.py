@@ -53,7 +53,7 @@ if __name__ == "__main__":
    comm = MPI.COMM_WORLD
    rank = comm.Get_rank()
    size = comm.Get_size()
-   thinning = 10; echo_interval = 50; n_updates = 40001
+   thinning = 10; echo_interval = 100; n_updates = 30001
   
    # Load data input
    with open('Mark_data_input.pkl', 'rb') as f:
