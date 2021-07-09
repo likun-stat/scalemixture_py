@@ -509,7 +509,7 @@ if __name__ == "__main__":
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
                                                                             Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean, 
                                                                             sigma_m_shape_cluster[cluster_num], random_generator)
-           Shape = np.tile(Shape, n_t)
+           Shape = np.tile(shape, n_t)
            Shape = Shape.reshape((n_s,n_t),order='F')
           
            # cen[:] = utils.which_censored(Y, Loc, Scale, Shape, prob_below)
