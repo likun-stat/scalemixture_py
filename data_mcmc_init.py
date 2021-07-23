@@ -39,7 +39,7 @@ if __name__ == "__main__":
    from matplotlib.backends.backend_pdf import PdfPages
    from pickle import load
    from pickle import dump
-   from scipy.linalg import lapack
+   # from scipy.linalg import lapack
    
    # Check whether the 'mpi4py' is installed
    test_mpi = os.system("python -c 'from mpi4py import *' &> /dev/null")
@@ -67,6 +67,7 @@ if __name__ == "__main__":
      sigma_m_loc1_cluster = load(f)
      sigma_m_scale_cluster = load(f)
      sigma_m_shape_cluster = load(f)
+     sigma_m_Z_cluster = load(f)
      f.close()
      
    # Filename for storing the intermediate results
@@ -106,7 +107,7 @@ if __name__ == "__main__":
    tau_sqd = initial_values['tau_sqd']
    prob_below = initial_values['prob_below']
    prob_above = initial_values['prob_above']
-   theta_c = initial_values['theta_c']
+   
    X = initial_values['X']
    Z = initial_values['Z']
    R = initial_values['R']
@@ -127,6 +128,7 @@ if __name__ == "__main__":
    beta_scale = initial_values['beta_scale']
    beta_shape = initial_values['beta_shape']
    
+   theta_c = initial_values['theta_c']
    theta_c_loc0 = initial_values['theta_c_loc0']
    theta_c_loc1 = initial_values['theta_c_loc1']
    theta_c_scale = initial_values['theta_c_scale']
@@ -147,16 +149,17 @@ if __name__ == "__main__":
    wh_to_plot_Xs = n_s*np.array([0.25,0.5,0.75])
    wh_to_plot_Xs = wh_to_plot_Xs.astype(int)
 
-   # Cholesky decomposition of the correlation matrix
-   tmp_vec = np.ones(n_s)
-   Cor = utils.corr_fn(Dist, theta_c)
-   # eig_Cor = np.linalg.eigh(Cor) #For symmetric matrices
-   # V = eig_Cor[1]
-   # d = eig_Cor[0]
-   cholesky_inv_all = lapack.dposv(Cor,tmp_vec)
+   
    thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
    thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
    
+   # Cholesky decomposition of the correlation matrix
+   # tmp_vec = np.ones(n_s)
+   # Cor = utils.corr_fn(Dist, theta_c)
+   # # eig_Cor = np.linalg.eigh(Cor) #For symmetric matrices
+   # # V = eig_Cor[1]
+   # # d = eig_Cor[0]
+   # cholesky_inv_all = lapack.dposv(Cor,tmp_vec)
    n_clusters = len(S_clusters)
    from scipy.linalg import cholesky
    Cor_loc0_clusters=list()
@@ -191,6 +194,14 @@ if __name__ == "__main__":
         Cor_shape_clusters.append(Cor_tmp)
         inv_shape_cluster.append(cholesky_inv)
 
+   Cor_Z_clusters=list()
+   inv_Z_cluster=list()
+   for i in np.arange(n_clusters):
+        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c)
+        cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
+        Cor_Z_clusters.append(Cor_tmp)
+        inv_Z_cluster.append(cholesky_inv)
+
 
    # Marginal GEV parameters: per location x time
    loc0_mean = Design_mat @beta_loc0
@@ -208,7 +219,7 @@ if __name__ == "__main__":
    Shape = Shape.reshape((n_s,n_t),order='F')
     
    # Initial trace objects
-   Z_1t_accept = np.zeros(n_s)
+   Z_1t_accept = np.repeat(0,n_clusters)
    R_accept = 0
    Z_1t_trace = np.empty((n_s,n_updates_thinned)); Z_1t_trace[:] = np.nan
    Z_1t_trace[:,0] = Z_onetime  
@@ -287,10 +298,11 @@ if __name__ == "__main__":
        X_onetime = utils.X_update(Y_onetime, cen[:,rank], cen_above[:,rank], delta, tau_sqd, Loc[:,rank], Scale[:,rank], Shape[:,rank])
       
        # Update Z
-       tmp = utils.Z_update_onetime(Y_onetime, X_onetime, R_onetime, Z_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above,
-                                    delta, tau_sqd, Loc[:,rank], Scale[:,rank], Shape[:,rank], thresh_X, thresh_X_above,
-                                    Cor, cholesky_inv_all, sigma_m['Z_onetime'], random_generator)
-       Z_1t_accept = Z_1t_accept + tmp
+       for cluster_num in np.arange(n_clusters):
+             Z_1t_accept[cluster_num] += utils.update_Z_1t_one_cluster(Z_onetime, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster, 
+                                 Y_onetime, X_onetime, R_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above, delta, tau_sqd, 
+                                 Loc[:,rank], Scale[:,rank], Shape[:,rank], thresh_X, thresh_X_above,
+                                 sigma_m_Z_cluster[cluster_num], random_generator)
       
        # Update R
        Metr_R = sampler.static_metr(Y_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood, 
@@ -353,11 +365,13 @@ if __name__ == "__main__":
            theta_c_trace_within_thinning[:,index_within] = theta_c
           
            if Metr_theta_c['acc_prob']>0:
-               Cor = utils.corr_fn(Dist, theta_c)
-               # eig_Cor = np.linalg.eigh(Cor) #For symmetric matrices
-               # V = eig_Cor[1]
-               # d = eig_Cor[0]
-               cholesky_inv_all = lapack.dposv(Cor,tmp_vec)
+               Cor_Z_clusters=list()
+               inv_Z_cluster=list()
+               for i in np.arange(n_clusters):
+                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c)
+                   cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
+                   Cor_Z_clusters.append(Cor_tmp)
+                   inv_Z_cluster.append(cholesky_inv)
            
            # Update beta_loc0 => Gaussian prior mean
            Metr_beta_loc0 = sampler.static_metr(loc0, beta_loc0, utils.beta_param_update_me_likelihood, 
@@ -524,8 +538,8 @@ if __name__ == "__main__":
        theta_c = comm.bcast(theta_c,root=0)
        # V = comm.bcast(V,root=0)
        # d = comm.bcast(d,root=0)
-       Cor = comm.bcast(Cor,root=0)
-       cholesky_inv_all = comm.bcast(cholesky_inv_all,root=0)
+       Cor_Z_clusters = comm.bcast(Cor_Z_clusters,root=0)
+       inv_Z_cluster = comm.bcast(inv_Z_cluster,root=0)
        Loc = comm.bcast(Loc,root=0)
        Scale = comm.bcast(Scale,root=0)
        Shape = comm.bcast(Shape,root=0)
@@ -564,8 +578,8 @@ if __name__ == "__main__":
            # Adapt via Shaby and Wells (2010)
            gamma2 = 1 / (index + offset)**(c_1)
            gamma1 = c_0*gamma2
-           sigma_m['Z_onetime'] = np.exp(np.log(sigma_m['Z_onetime']) + gamma1*(Z_1t_accept/thinning - r_opt_1d))
-           Z_1t_accept[:] = 0
+           sigma_m_Z_cluster[:] = np.exp(np.log(sigma_m_Z_cluster) + gamma1*(Z_1t_accept/thinning - r_opt_md))
+           Z_1t_accept[:] = np.repeat(0,n_clusters)
            sigma_m['R_1t'] = np.exp(np.log(sigma_m['R_1t']) + gamma1*(R_accept/thinning - r_opt_1d))
            R_accept = 0
           
@@ -720,10 +734,10 @@ if __name__ == "__main__":
                    dump(beta_loc1_trace, f)
                    dump(beta_scale_trace, f)
                    dump(beta_shape_trace, f)
-                   dump(theta_c_loc0,f)
-                   dump(theta_c_loc1,f)
-                   dump(theta_c_scale,f)
-                   dump(theta_c_shape,f)
+                   dump(theta_c_loc0_trace,f)
+                   dump(theta_c_loc1_trace,f)
+                   dump(theta_c_scale_trace,f)
+                   dump(theta_c_shape_trace,f)
                    
                    dump(loc0_trace,f)
                    dump(loc1_trace,f)
@@ -736,6 +750,12 @@ if __name__ == "__main__":
                    dump(X_onetime, f)
                    dump(X_s_onetime, f)
                    dump(R_onetime, f)
+                   
+                   dump(sigma_m_Z_cluster, f)
+                   dump(sigma_m_loc0_cluster, f)
+                   dump(sigma_m_loc1_cluster, f)
+                   dump(sigma_m_scale_cluster, f)
+                   dump(sigma_m_shape_cluster, f)
                    f.close()
                    
                # Echo trace plots
@@ -835,6 +855,7 @@ if __name__ == "__main__":
                    dump(cen_above,f)
                    dump(initial_values, f)
                    dump(sigma_m, f)
+                   dump(sigma_m_Z_cluster, f)
                    dump(iter, f)
                    dump(Z_1t_trace, f)
                    dump(R_1t_trace, f)
