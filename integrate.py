@@ -1305,11 +1305,11 @@ def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z
     # 3. Calculate likelihoods
     X_s_which = (R**(delta/(1-delta)))*norm_to_Pareto(current_params)
     prop_X_s_which = (R**(delta/(1-delta)))*norm_to_Pareto(params_star)
-    log_num = marg_transform_data_mixture_me_likelihood_uni(Y[which], X[which], prop_X_s_which, 
+    log_num = marg_transform_data_mixture_me_likelihood(Y[which], X[which], prop_X_s_which, 
                        cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd,  
                        thresh_X, thresh_X_above)  + dmvn(params_star, Cor_Z_clusters[cluster_num], 
                                                          mean=0, cholesky_inv =inv_Z_cluster[cluster_num])
-    log_denom = marg_transform_data_mixture_me_likelihood_uni(Y[which], X[which], X_s_which, 
+    log_denom = marg_transform_data_mixture_me_likelihood(Y[which], X[which], X_s_which, 
                        cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd, 
                        thresh_X, thresh_X_above) + dmvn(current_params, Cor_Z_clusters[cluster_num], 
                                                          mean=0, cholesky_inv =inv_Z_cluster[cluster_num])
