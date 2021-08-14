@@ -10,11 +10,11 @@ Created on Fri Jun 25 12:08:19 2021
 ## Main sampler
 
 ## Must provide data input 'data_input.pkl' to initiate the sampler.
-## In 'data_input.pkl', one must include 
+## In 'data_input.pkl', one must include
 ##      Y ........................................... censored observations on GEV scale
 ##      cen ........................................................... indicator matrix
-##      initial.values .................. a dictionary: delta, tau_sqd, prob_below, Dist, 
-##                                             theta_c, X, X_s, R, Design_mat, beta_loc0, 
+##      initial.values .................. a dictionary: delta, tau_sqd, prob_below, Dist,
+##                                             theta_c, X, X_s, R, Design_mat, beta_loc0,
 ##                                             beta_loc1, Time, beta_scale, beta_shape
 ##      n_updates .................................................... number of updates
 ##      thinning ......................................... number of runs in each update
@@ -22,7 +22,7 @@ Created on Fri Jun 25 12:08:19 2021
 ##      echo_interval ......................... echo process every echo_interval updates
 ##      sigma_m
 ##      prop_Sigma
-##      true_params ....................... a dictionary: delta, rho, tau_sqd, theta_gpd, 
+##      true_params ....................... a dictionary: delta, rho, tau_sqd, theta_gpd,
 ##                                              prob_below, X_s, R
 ##
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
    r_opt_md = .23
    eps = 1e-6 # a small number
   
-   # Hyper parameters for the prior of the mixing distribution parameters and 
+   # Hyper parameters for the prior of the mixing distribution parameters and
    hyper_params_delta = np.array([0.1,0.7])
    hyper_params_tau_sqd = np.array([0.1,0.1])
    hyper_params_theta_c = np.array([0, 20])
@@ -222,7 +222,7 @@ if __name__ == "__main__":
    Z_1t_accept = np.repeat(0,n_clusters)
    R_accept = 0
    Z_1t_trace = np.empty((n_s,n_updates_thinned)); Z_1t_trace[:] = np.nan
-   Z_1t_trace[:,0] = Z_onetime  
+   Z_1t_trace[:,0] = Z_onetime
    R_1t_trace = np.empty(n_updates_thinned); R_1t_trace[:] = np.nan
    R_1t_trace[0] = R_onetime
    if rank == 0:
@@ -299,18 +299,18 @@ if __name__ == "__main__":
       
        # Update Z
        for cluster_num in np.arange(n_clusters):
-             Z_1t_accept[cluster_num] += utils.update_Z_1t_one_cluster(Z_onetime, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster, 
-                                 Y_onetime, X_onetime, R_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above, delta, tau_sqd, 
+             Z_1t_accept[cluster_num] += utils.update_Z_1t_one_cluster(Z_onetime, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
+                                 Y_onetime, X_onetime, R_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above, delta, tau_sqd,
                                  Loc[:,rank], Scale[:,rank], Shape[:,rank], thresh_X, thresh_X_above,
                                  sigma_m_Z_cluster[cluster_num], random_generator)
       
        # Update R
-       Metr_R = sampler.static_metr(Y_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood, 
-                           priors.R_prior, 1, 2, 
+       Metr_R = sampler.static_metr(Y_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood,
+                           priors.R_prior, 1, 2,
                            random_generator,
-                           np.nan, sigma_m['R_1t'], False, 
-                           X_onetime, Z_onetime, 
-                           cen[:,rank], cen_above[:,rank], prob_below, prob_above, 
+                           np.nan, sigma_m['R_1t'], False,
+                           X_onetime, Z_onetime,
+                           cen[:,rank], cen_above[:,rank], prob_below, prob_above,
                            Loc[:,rank], Scale[:,rank], Shape[:,rank], delta, tau_sqd,
                            thresh_X, thresh_X_above)
        R_accept = R_accept + Metr_R['acc_prob']
@@ -333,18 +333,18 @@ if __name__ == "__main__":
            # print('beta_shape_accept=',beta_shape_accept, ', iter=', iter)
 
            # Update delta
-           Metr_delta = sampler.static_metr(Y, delta, utils.delta_update_mixture_me_likelihood, priors.interval_unif, 
-                   hyper_params_delta, 2, 
+           Metr_delta = sampler.static_metr(Y, delta, utils.delta_update_mixture_me_likelihood, priors.interval_unif,
+                   hyper_params_delta, 2,
                    random_generator,
-                   np.nan, sigma_m['delta'], False, 
+                   np.nan, sigma_m['delta'], False,
                    R, Z, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, tau_sqd)
            delta_accept = delta_accept + Metr_delta['acc_prob']
            delta = Metr_delta['trace'][0,1]
            X_s[:] = (R**(delta/(1-delta)))*utils.norm_to_Pareto(Z)
            
            # Update tau_sqd
-           Metr_tau_sqd = sampler.static_metr(Y, tau_sqd, utils.tau_update_mixture_me_likelihood, priors.invGamma_prior, 
-                           hyper_params_tau_sqd, 2, 
+           Metr_tau_sqd = sampler.static_metr(Y, tau_sqd, utils.tau_update_mixture_me_likelihood, priors.invGamma_prior,
+                           hyper_params_tau_sqd, 2,
                            random_generator,
                            np.nan, sigma_m['tau_sqd'], False,
                            X_s, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, delta)
@@ -355,7 +355,7 @@ if __name__ == "__main__":
            thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
            
            # Update theta_c
-           Metr_theta_c = sampler.static_metr(Z, theta_c, utils.theta_c_update_mixture_me_likelihood, 
+           Metr_theta_c = sampler.static_metr(Z, theta_c, utils.theta_c_update_mixture_me_likelihood,
                              priors.interval_unif_multi, hyper_params_theta_c, 2,
                              random_generator,
                              prop_sigma['theta_c'], sigma_m['theta_c'], False,
@@ -374,10 +374,10 @@ if __name__ == "__main__":
                    inv_Z_cluster.append(cholesky_inv)
            
            # Update beta_loc0 => Gaussian prior mean
-           Metr_beta_loc0 = sampler.static_metr(loc0, beta_loc0, utils.beta_param_update_me_likelihood, 
+           Metr_beta_loc0 = sampler.static_metr(loc0, beta_loc0, utils.beta_param_update_me_likelihood,
                              priors.unif_prior, hyper_params_beta_loc0, 2,
                              random_generator,
-                             prop_sigma['beta_loc0'], sigma_m['beta_loc0'], False, 
+                             prop_sigma['beta_loc0'], sigma_m['beta_loc0'], False,
                              Design_mat, Cluster_which, Cor_loc0_clusters, inv_loc0_cluster)
            beta_loc0_accept = beta_loc0_accept + Metr_beta_loc0['acc_prob']
            beta_loc0 = Metr_beta_loc0['trace'][:,1]
@@ -386,10 +386,10 @@ if __name__ == "__main__":
            
            
            # Update beta_loc1 => Gaussian prior mean
-           Metr_beta_loc1 = sampler.static_metr(loc1, beta_loc1, utils.beta_param_update_me_likelihood, 
+           Metr_beta_loc1 = sampler.static_metr(loc1, beta_loc1, utils.beta_param_update_me_likelihood,
                              priors.unif_prior, hyper_params_beta_loc1, 2,
                              random_generator,
-                             prop_sigma['beta_loc1'], sigma_m['beta_loc1'], False, 
+                             prop_sigma['beta_loc1'], sigma_m['beta_loc1'], False,
                              Design_mat, Cluster_which, Cor_loc1_clusters, inv_loc1_cluster)
            beta_loc1_accept = beta_loc1_accept + Metr_beta_loc1['acc_prob']
            beta_loc1 = Metr_beta_loc1['trace'][:,1]
@@ -398,10 +398,10 @@ if __name__ == "__main__":
            
            
            # Update beta_scale => Gaussian prior mean
-           Metr_beta_scale = sampler.static_metr(np.log(scale), beta_scale, utils.beta_param_update_me_likelihood, 
+           Metr_beta_scale = sampler.static_metr(np.log(scale), beta_scale, utils.beta_param_update_me_likelihood,
                              priors.unif_prior, hyper_params_beta_scale, 2,
                              random_generator,
-                             prop_sigma['beta_scale'], sigma_m['beta_scale'], False, 
+                             prop_sigma['beta_scale'], sigma_m['beta_scale'], False,
                              Design_mat, Cluster_which, Cor_scale_clusters, inv_scale_cluster)
            beta_scale_accept = beta_scale_accept + Metr_beta_scale['acc_prob']
            beta_scale = Metr_beta_scale['trace'][:,1]
@@ -410,10 +410,10 @@ if __name__ == "__main__":
            
            
            # Update beta_shape => Gaussian prior mean
-           Metr_beta_shape = sampler.static_metr(shape, beta_shape, utils.beta_param_update_me_likelihood, 
+           Metr_beta_shape = sampler.static_metr(shape, beta_shape, utils.beta_param_update_me_likelihood,
                              priors.unif_prior, hyper_params_beta_shape, 2,
                              random_generator,
-                             prop_sigma['beta_shape'], sigma_m['beta_shape'], False, 
+                             prop_sigma['beta_shape'], sigma_m['beta_shape'], False,
                              Design_mat, Cluster_which, Cor_shape_clusters, inv_shape_cluster)
            beta_shape_accept = beta_shape_accept + Metr_beta_shape['acc_prob']
            beta_shape = Metr_beta_shape['trace'][:,1]
@@ -422,10 +422,10 @@ if __name__ == "__main__":
             
            
            # Update theta_c_loc0
-           Metr_theta_c_loc0 = sampler.static_metr(loc0, theta_c_loc0[0], utils.theta_c_param_updata_me_likelihood, 
+           Metr_theta_c_loc0 = sampler.static_metr(loc0, theta_c_loc0[0], utils.theta_c_param_updata_me_likelihood,
                              priors.interval_unif, hyper_params_theta_c_loc0, 2,
                              random_generator,
-                             np.nan, sigma_m['theta_c_loc0'], False, 
+                             np.nan, sigma_m['theta_c_loc0'], False,
                              theta_c_loc0[1], loc0_mean, Cluster_which, S_clusters)
            theta_c_loc0_accept = theta_c_loc0_accept + Metr_theta_c_loc0['acc_prob']
            theta_c_loc0[0] = Metr_theta_c_loc0['trace'][0,1]
@@ -440,10 +440,10 @@ if __name__ == "__main__":
            
             
            # Update theta_c_loc1
-           Metr_theta_c_loc1 = sampler.static_metr(loc1, theta_c_loc1[0], utils.theta_c_param_updata_me_likelihood, 
+           Metr_theta_c_loc1 = sampler.static_metr(loc1, theta_c_loc1[0], utils.theta_c_param_updata_me_likelihood,
                              priors.interval_unif, hyper_params_theta_c_loc1, 2,
                              random_generator,
-                             np.nan, sigma_m['theta_c_loc1'], False, 
+                             np.nan, sigma_m['theta_c_loc1'], False,
                              theta_c_loc1[1], loc1_mean, Cluster_which, S_clusters)
            theta_c_loc1_accept = theta_c_loc1_accept + Metr_theta_c_loc1['acc_prob']
            theta_c_loc1[0] = Metr_theta_c_loc1['trace'][0,1]
@@ -457,10 +457,10 @@ if __name__ == "__main__":
                    inv_loc1_cluster.append(cholesky_inv)
                    
            # Update theta_c_scale
-           Metr_theta_c_scale = sampler.static_metr(np.log(scale), theta_c_scale[0], utils.theta_c_param_updata_me_likelihood, 
+           Metr_theta_c_scale = sampler.static_metr(np.log(scale), theta_c_scale[0], utils.theta_c_param_updata_me_likelihood,
                              priors.interval_unif, hyper_params_theta_c_scale, 2,
                              random_generator,
-                             np.nan, sigma_m['theta_c_scale'], False, 
+                             np.nan, sigma_m['theta_c_scale'], False,
                              theta_c_scale[1], scale_mean, Cluster_which, S_clusters)
            theta_c_scale_accept = theta_c_scale_accept + Metr_theta_c_scale['acc_prob']
            theta_c_scale[0] = Metr_theta_c_scale['trace'][0,1]
@@ -474,10 +474,10 @@ if __name__ == "__main__":
                    inv_scale_cluster.append(cholesky_inv)
                    
            # Update theta_c_shape
-           Metr_theta_c_shape = sampler.static_metr(shape, theta_c_shape[0], utils.theta_c_param_updata_me_likelihood, 
+           Metr_theta_c_shape = sampler.static_metr(shape, theta_c_shape[0], utils.theta_c_param_updata_me_likelihood,
                             priors.interval_unif, hyper_params_theta_c_shape, 2,
                             random_generator,
-                            np.nan, sigma_m['theta_c_shape'], False, 
+                            np.nan, sigma_m['theta_c_shape'], False,
                             theta_c_shape[1], shape_mean, Cluster_which, S_clusters)
            theta_c_shape_accept = theta_c_shape_accept + Metr_theta_c_shape['acc_prob']
            theta_c_shape[0] = Metr_theta_c_shape['trace'][0,1]
@@ -493,25 +493,25 @@ if __name__ == "__main__":
             
            # Update loc0
            for cluster_num in np.arange(n_clusters):
-               loc0_accept[cluster_num] += utils.update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster, 
-                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
-                                                                            loc1, Scale, Shape, Time, thresh_X, thresh_X_above, loc0_mean, 
+               loc0_accept[cluster_num] += utils.update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster,
+                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
+                                                                            loc1, Scale, Shape, Time, thresh_X, thresh_X_above, loc0_mean,
                                                                             sigma_m_loc0_cluster[cluster_num], random_generator)
            
            # Update loc1
            for cluster_num in np.arange(n_clusters):
-               loc1_accept[cluster_num] += utils.update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster, 
-                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
-                                                                            loc0, Scale, Shape, Time, thresh_X, thresh_X_above, loc1_mean, 
+               loc1_accept[cluster_num] += utils.update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster,
+                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
+                                                                            loc0, Scale, Shape, Time, thresh_X, thresh_X_above, loc1_mean,
                                                                             sigma_m_loc1_cluster[cluster_num], random_generator)
            Loc = np.tile(loc0, n_t) + np.tile(loc1, n_t)*np.repeat(Time,n_s)
            Loc = Loc.reshape((n_s,n_t),order='F')
            
            # Update scale
            for cluster_num in np.arange(n_clusters):
-               scale_accept[cluster_num] += utils.update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster, 
-                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
-                                                                            Loc, Shape, Time, thresh_X, thresh_X_above, scale_mean, 
+               scale_accept[cluster_num] += utils.update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster,
+                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
+                                                                            Loc, Shape, Time, thresh_X, thresh_X_above, scale_mean,
                                                                             sigma_m_scale_cluster[cluster_num], random_generator)
            Scale = np.tile(scale, n_t)
            Scale = Scale.reshape((n_s,n_t),order='F')
@@ -519,9 +519,9 @@ if __name__ == "__main__":
             
            # Update shape
            for cluster_num in np.arange(n_clusters):
-               shape_accept[cluster_num] += utils.update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster, 
-                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
-                                                                            Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean, 
+               shape_accept[cluster_num] += utils.update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster,
+                                                                            Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
+                                                                            Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean,
                                                                             sigma_m_shape_cluster[cluster_num], random_generator)
            Shape = np.tile(shape, n_t)
            Shape = Shape.reshape((n_s,n_t),order='F')
@@ -554,7 +554,7 @@ if __name__ == "__main__":
            index = np.int(iter/thinning)
            
            # Fill in trace objects
-           Z_1t_trace[:,index] = Z_onetime  
+           Z_1t_trace[:,index] = Z_onetime
            R_1t_trace[index] = R_onetime
            if rank == 0:
                delta_trace[index] = delta
@@ -674,6 +674,7 @@ if __name__ == "__main__":
                
                sigma_m_loc0_cluster[:] = np.exp(np.log(sigma_m_loc0_cluster) + gamma1*(loc0_accept/thinning - r_opt_md))
                loc0_accept[:] = np.repeat(0,n_clusters)
+               print(' Done with '+str(index)+", mean accept="+str(np.mean(loc0_accept))+", mean sigma_m_loc0="+str(np.mean(sigma_m_loc0_cluster))+",\n")
                
                sigma_m_loc1_cluster[:] = np.exp(np.log(sigma_m_loc1_cluster) + gamma1*(loc1_accept/thinning - r_opt_md))
                loc1_accept[:] = np.repeat(0,n_clusters)
@@ -684,7 +685,7 @@ if __name__ == "__main__":
                sigma_m_shape_cluster[:] = np.exp(np.log(sigma_m_shape_cluster) + gamma1*(shape_accept/thinning - r_opt_md))
                shape_accept[:] = np.repeat(0,n_clusters)
           
-       # ----------------------------------------------------------------------------------------                
+       # ----------------------------------------------------------------------------------------
        # -------------------------- Echo & save every 'thinning' steps --------------------------
        # ----------------------------------------------------------------------------------------
        if (iter / thinning) % echo_interval == 0:
@@ -780,7 +781,7 @@ if __name__ == "__main__":
                plt.ylabel(r'Location $\mu_0$: $\beta_0$')
                plt.subplot2grid(grid_size, (2,1)) # mu0: beta_1
                plt.plot(beta_loc0_trace[1,:], color='gray', linestyle='solid')
-               plt.ylabel(r'Location $\mu_0$: $\beta_1$') 
+               plt.ylabel(r'Location $\mu_0$: $\beta_1$')
                plt.subplot2grid(grid_size, (3,0)) # mu1: beta_0
                plt.plot(beta_loc1_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'Location $\mu_1$: $\beta_0$')
@@ -807,12 +808,12 @@ if __name__ == "__main__":
                plt.ylabel(r'Shape $\xi$: $\beta_1$')
                plt.subplot2grid(grid_size, (2,0))   # X^*
                plt.plot(Z_1t_trace[1,:], color='gray', linestyle='solid')
-               plt.ylabel(r'$X^*$'+'['+str(1)+","+str(rank)+']')
+               plt.ylabel(r'$Z$'+'['+str(1)+","+str(rank)+']')
                where = [(2,1),(3,0),(3,1)]
                for wh_sub,i in enumerate(wh_to_plot_Xs):
                    plt.subplot2grid(grid_size, where[wh_sub]) # X^*
                    plt.plot(Z_1t_trace[i,:], color='gray', linestyle='solid')
-                   plt.ylabel(r'$Z$'+'['+str(i)+","+str(rank)+']')        
+                   plt.ylabel(r'$Z$'+'['+str(i)+","+str(rank)+']')
                plt.tight_layout()
                pdf_pages.savefig(fig)
                plt.close()
@@ -823,13 +824,13 @@ if __name__ == "__main__":
                plt.subplot2grid(grid_size, (0,0))
                plt.plot(theta_c_loc0_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(loc0)$')
-               plt.subplot2grid(grid_size, (0,1)) 
+               plt.subplot2grid(grid_size, (0,1))
                plt.plot(theta_c_loc1_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(loc1)$')
-               plt.subplot2grid(grid_size, (1,0)) 
+               plt.subplot2grid(grid_size, (1,0))
                plt.plot(theta_c_scale_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(scale)$')
-               plt.subplot2grid(grid_size, (1,1)) 
+               plt.subplot2grid(grid_size, (1,1))
                plt.plot(theta_c_shape_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(shape)$')
                plt.subplot2grid(grid_size, (2,0)) # rho
@@ -847,7 +848,7 @@ if __name__ == "__main__":
                plt.tight_layout()
                pdf_pages.savefig(fig)
                plt.close()
-               pdf_pages.close() 
+               pdf_pages.close()
            else:
                with open(filename, 'wb') as f:
                    dump(Y, f)

@@ -25,7 +25,7 @@ import sys
 ## Generate Pareto random variables
 ##
 
-def rPareto(n, location, shape = 1): 
+def rPareto(n, location, shape = 1):
     if(isinstance(n, (int, np.int64, float))): n=np.array([n])
     if n.size < 1:
         sys.exit("'n' must be non-empty.")
@@ -53,7 +53,7 @@ def rPareto(n, location, shape = 1):
 ##
 
 def asymptotic_p(xval, delta):
-    if abs(delta-0.5)<1e-9: 
+    if abs(delta-0.5)<1e-9:
         result = 1-(math.log(xval)+1)/xval
     else:
         result = 1-(delta/(2*delta-1))*xval**((delta-1)/delta)+((1-delta)/(2*delta-1))/xval
@@ -80,7 +80,7 @@ def pmixture_me_C(xval, delta, tau_sqd):
     sd = np.sqrt(tau_sqd)
     
     # Nugget error gets to 100 times the sd? Negligible!
-    if tau_sqd < 0.05: 
+    if tau_sqd < 0.05:
         tmp = 0
         if xval>1:
             tmp = asymptotic_p(xval, delta)
@@ -94,7 +94,7 @@ def pmixture_me_C(xval, delta, tau_sqd):
         return tmp
 
 ## Vectorize pmixture_me_C
-pmixture_me = np.vectorize(pmixture_me_C,otypes=[np.float])   
+pmixture_me = np.vectorize(pmixture_me_C,otypes=[np.float])
 
 
 
@@ -119,17 +119,17 @@ def pmixture_me_pre(xval, my_lower_bound, delta, tau_sqd, tmp1, tmp3, tmp4):
 
 def pmixture_me_uni(xval, delta, tau_sqd):
     # Randomly assign 'tmp1' a value when 'delta==0.5' because it is not needed.
-    if delta==0.5: 
-        tmp1 = np.inf 
-    else: 
+    if delta==0.5:
+        tmp1 = np.inf
+    else:
         tmp1 = 1/(2*delta-1)
     tmp3 = delta*tmp1
-    tmp4 = (1-delta)*tmp1   
+    tmp4 = (1-delta)*tmp1
     sd = math.sqrt(tau_sqd)
     
     # Nugget error gets to 100 times the sd? Negligible!
     my_lower_bound = 100*sd
-    if tau_sqd < 0.05: 
+    if tau_sqd < 0.05:
         tmp = 0
         if xval>0:
             tmp = asymptotic_p(xval, delta)
@@ -223,7 +223,7 @@ def qmixture_me_interp(p, delta, tau_sqd, cdf_vals = np.nan, x_vals = np.nan,
                                n_x=200, lower=5, upper=20):
     
   if type(p).__module__!='numpy':
-      p = np.array(p)   
+      p = np.array(p)
   large_delta_large_x = False
   if np.any(np.isnan(x_vals)):
     x_range = find_xrange_pmixture_me(np.min(p),np.max(p), np.array([lower,upper]), delta, tau_sqd)
@@ -258,7 +258,7 @@ def qmixture_me_interp(p, delta, tau_sqd, cdf_vals = np.nan, x_vals = np.nan,
      if np.any(~which):
          # tck = interp.interp1d(cdf_vals, x_vals, kind = 'cubic')
          tck = interp.pchip(cdf_vals, x_vals)
-         q_vals[~which] = tck(p[~which])  
+         q_vals[~which] = tck(p[~which])
   return q_vals
   
       
@@ -293,7 +293,7 @@ def qmixture_me_interp(p, delta, tau_sqd, cdf_vals = np.nan, x_vals = np.nan,
 # ax.plot(X_vals, D_mix, 'r',linestyle='--', label="With nugget: C++ lowlevel callable")
 # ax.plot(X_vals, D_py, 'g',linestyle=':', label="With nugget: numerical int")
 # legend = ax.legend(loc = "lower right",shadow=True)
-# plt.title(label="Delta") 
+# plt.title(label="Delta")
 # plt.show()
 
 
@@ -310,7 +310,7 @@ def asymptotic_d(xval, delta):
     if abs(delta-0.5)<1e-9:
         result=xval**(-2)*math.log(xval)
     else:
-        result = ((1-delta)/(2*delta-1))*(xval**(-1/delta)-xval**(-2))   
+        result = ((1-delta)/(2*delta-1))*(xval**(-1/delta)-xval**(-2))
     return result
 
 
@@ -343,13 +343,13 @@ def dmixture_me_C(xval, delta, tau_sqd):
     tmp_res = - I_1[0]/(np.sqrt(2*np.pi)*sd)
     if(tmp_res<1e-4):
         tmp_res_asymp = asymptotic_d(xval, delta)
-        if tmp_res/tmp_res_asymp<0.1: 
-            tmp_res = tmp_res_asymp    
+        if tmp_res/tmp_res_asymp<0.1:
+            tmp_res = tmp_res_asymp
     return tmp_res
 
 
 ## Vectorize dmixture_me_C
-dmixture_me = np.vectorize(dmixture_me_C,otypes=[np.float])   
+dmixture_me = np.vectorize(dmixture_me_C,otypes=[np.float])
 
 
 
@@ -366,9 +366,9 @@ def mix_dens_integrand(t, xval, delta, tau_sqd, tmp1):
 
 def dmixture_me_uni(xval, delta, tau_sqd):
     # Randomly assign 'tmp1' a value when 'delta==0.5' because it is not needed.
-    if delta==0.5: 
-        tmp1 = np.inf 
-    else: 
+    if delta==0.5:
+        tmp1 = np.inf
+    else:
         tmp1 = (1-delta)/(2*delta-1)
     sd = math.sqrt(tau_sqd)
     # Nugget error gets to 100 times the sd? Negligible!
@@ -378,8 +378,8 @@ def dmixture_me_uni(xval, delta, tau_sqd):
     tmp_res = -I_1[0]/math.sqrt(2*math.pi*tau_sqd)
     if(tmp_res<1e-4):
         tmp_res_asymp = asymptotic_d(xval, delta)
-        if tmp_res/tmp_res_asymp<0.1: 
-            tmp_res = tmp_res_asymp    
+        if tmp_res/tmp_res_asymp<0.1:
+            tmp_res = tmp_res_asymp
     return tmp_res
 
     
@@ -392,7 +392,7 @@ def dmixture_me_uni(xval, delta, tau_sqd):
   #       tmp_res  = dmixture_me_uni(xval, delta, tau_sqd)
   #       if(tmp_res<1e-4):
   #           tmp_res_asymp = asymptotic_d(xval, delta)
-  #           if tmp_res/tmp_res_asymp<0.1: 
+  #           if tmp_res/tmp_res_asymp<0.1:
   #               tmp_res = tmp_res_asymp
   #       resultVec[idx] = tmp_res
   #   return resultVec
@@ -431,7 +431,7 @@ dmixture_me_py = np.vectorize(dmixture_me_uni)
 # ax.plot(X_vals, D_mix, 'r',linestyle='--', label="With nugget: C++ lowlevel callable")
 # ax.plot(X_vals[1:], D_py[1:], 'g',linestyle=':', label="With nugget: numerical int")
 # legend = ax.legend(loc = "upper right",shadow=True)
-# plt.title(label="Delta") 
+# plt.title(label="Delta")
 # plt.show()
 
 
@@ -530,28 +530,28 @@ def eig2logdet(d):
   return sum(np.log(d))
 
 
-## Multivariate normal log density of R, where each column of 
+## Multivariate normal log density of R, where each column of
 ## R iid N(mean,VDV'), where VDV' is the covariance matrix
 ## It essentially computes the log density of each column of R, then takes
 ## the sum.  Faster than looping over the columns, but not as transparent.
-##                                     
+##
 ## Ignore the coefficient: -p/2*log(2*pi)
 ##
 def dmvn_eig(R, V, d_inv, mean=0):
-  if len(R.shape)==1: 
-    n_rep = 1 
-  else: 
+  if len(R.shape)==1:
+    n_rep = 1
+  else:
     n_rep = R.shape[1]
   res = -0.5*n_rep*eig2logdet(1/d_inv) - 0.5 * np.sum((R-mean) * eig2inv_times_vector(V, d_inv, R-mean))
   return res
 
 def dmvn(R, Cor, mean=0, cholesky_inv = None):## cholesky_inv is the output of inv_times_vector()
-  if len(R.shape)==1: 
-    n_rep = 1 
-  else: 
+  if len(R.shape)==1:
+    n_rep = 1
+  else:
     n_rep = R.shape[1]
     
-  if cholesky_inv is None: 
+  if cholesky_inv is None:
       inv = lapack.dposv(Cor, R-mean)
   else:
       sol = lapack.dpotrs(cholesky_inv[0],R-mean) #Solve Ax = b using factorization
@@ -612,7 +612,7 @@ def pareto_to_Norm(W):
 ## -------------------------------------------------------------------------- ##
 ## For generalized extreme value (GEV) distribution
 ## Negative shape parametrization in scipy.genextreme
-## 
+##
 
 def dgev(yvals, Loc, Scale, Shape, log=False):
     if log:
@@ -628,7 +628,7 @@ def pgev(yvals, Loc, Scale, Shape, log=False):
 
 def qgev(p, Loc, Scale, Shape):
     if type(p).__module__!='numpy':
-      p = np.array(p)  
+      p = np.array(p)
     return genextreme.ppf(p, c=-Shape, loc=Loc, scale=Scale)  # Opposite shape
 
 ##
@@ -649,7 +649,7 @@ def qgev(p, Loc, Scale, Shape):
 
 ## -------------------------------------------------------------------------- ##
 ## Transforms observations from a Gaussian scale mixture to a GPD, or vice versa
-## 
+##
 
 def scalemix_me_2_gev(X, delta, tau_sqd, Loc, Scale, Shape):
     unifs = pmixture_me(X, delta, tau_sqd)
@@ -659,7 +659,7 @@ def scalemix_me_2_gev(X, delta, tau_sqd, Loc, Scale, Shape):
 def gev_2_scalemix_me(Y, delta, tau_sqd, Loc, Scale, Shape):
     unifs = pgev(Y, Loc, Scale, Shape)
     scalemixes = qmixture_me_interp(unifs, delta, tau_sqd)
-    return scalemixes 
+    return scalemixes
 
 ## After GEV params are updated, the 'cen' should be re-calculated.
 def which_censored(Y, Loc, Scale, Shape, prob_below):
@@ -672,7 +672,7 @@ def X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape):
     X[:] = np.nan
     
     if np.any(~cen & ~cen_above):
-        X[~cen & ~cen_above] = gev_2_scalemix_me(Y[~cen & ~cen_above], delta, tau_sqd, 
+        X[~cen & ~cen_above] = gev_2_scalemix_me(Y[~cen & ~cen_above], delta, tau_sqd,
                                     Loc[~cen & ~cen_above], Scale[~cen & ~cen_above], Shape[~cen & ~cen_above])
     return X
 
@@ -687,16 +687,16 @@ def X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape):
 ## of Gaussians, transformed to GPD (matrix/vector input)
 ##
 ## NOT ACTUALLY depending on X. X and cen need to be calculated in advance.
-## 
+##
 ##
 
-def marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, 
-                prob_below, prob_above, Loc, Scale, Shape, 
+def marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above,
+                prob_below, prob_above, Loc, Scale, Shape,
                 delta, tau_sqd, thresh_X=np.nan, thresh_X_above=np.nan):
   if np.isnan(thresh_X):
      thresh_X = qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
      thresh_X_above = qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
-  sd = math.sqrt(tau_sqd)  
+  sd = math.sqrt(tau_sqd)
   
   ## Initialize space to store the log-likelihoods for each observation:
   ll = np.empty(Y.shape)
@@ -721,13 +721,13 @@ def marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above,
 
 
 ## Univariate version
-def marg_transform_data_mixture_me_likelihood_uni(Y, X, X_s, cen, cen_above, 
-                   prob_below, prob_above, Loc, Scale, Shape, 
+def marg_transform_data_mixture_me_likelihood_uni(Y, X, X_s, cen, cen_above,
+                   prob_below, prob_above, Loc, Scale, Shape,
                    delta, tau_sqd, thresh_X=np.nan, thresh_X_above=np.nan):
   if np.isnan(thresh_X):
      thresh_X = qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
      thresh_X_above = qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
-  sd = math.sqrt(tau_sqd)  
+  sd = math.sqrt(tau_sqd)
   ll=np.array(np.nan)
   if cen:
      ll = norm.logcdf(thresh_X, loc=X_s, scale=sd)
@@ -736,7 +736,7 @@ def marg_transform_data_mixture_me_likelihood_uni(Y, X, X_s, cen, cen_above,
   else:
      ll = norm.logpdf(X, loc=X_s, scale=sd
         )+dgev(Y, Loc=Loc, Scale=Scale, Shape=Shape, log=True
-        )-np.log(dmixture_me(X, delta = delta, tau_sqd = tau_sqd)) 
+        )-np.log(dmixture_me(X, delta = delta, tau_sqd = tau_sqd))
   #if np.isnan(ll):
   #   ll = -np.inf
   return ll
@@ -750,7 +750,7 @@ def marg_transform_data_mixture_me_likelihood_uni(Y, X, X_s, cen, cen_above,
 ## Updates the X.s, for the generic Metropolis sampler
 ## Samples from the scaled Gaussian process (update the smooth process).
 ## The mixing distribution comes from from the Huser-wadsworth scale mixing distribution.
-## 
+##
 ## Update ONE time, and 'thresh_X' is required.
 
 def X_s_likelihood_conditional(X_s, R, V, d):
@@ -777,11 +777,11 @@ def X_s_update_onetime(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc, S
         # temp = X_s(iter)+v_q(iter)*R::rnorm(0,1);
         temp = X_s_idx + Sigma_m[idx]*random_generator.standard_normal(1)
         prop_X_s[idx] = temp
-        log_num = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], prop_X_s[idx], 
-                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd, 
+        log_num = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], prop_X_s[idx],
+                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd,
                        thresh_X, thresh_X_above) + X_s_likelihood_conditional(prop_X_s, R, V, d);
-        log_denom = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], X_s_idx, 
-                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd, 
+        log_denom = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], X_s_idx,
+                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd,
                        thresh_X, thresh_X_above) + X_s_likelihood_conditional(X_s, R, V, d);
         
         r = np.exp(log_num - log_denom)
@@ -808,7 +808,7 @@ def Z_likelihood_conditional(Z, Cor, cholesky_inv):
 
 
 def Z_update_onetime(Y, X, R, Z, cen, cen_above, prob_below, prob_above,
-                delta, tau_sqd, Loc, Scale, Shape, thresh_X, thresh_X_above, 
+                delta, tau_sqd, Loc, Scale, Shape, thresh_X, thresh_X_above,
                 Cor, cholesky_inv, Sigma_m, random_generator):
     
     n_s = X.size
@@ -826,11 +826,11 @@ def Z_update_onetime(Y, X, R, Z, cen, cen_above, prob_below, prob_above,
         prop_Z[idx] = temp
         prop_X_s_idx = (R**(delta/(1-delta)))*norm_to_Pareto(temp)
         
-        log_num = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], prop_X_s_idx, 
-                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd,  
+        log_num = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], prop_X_s_idx,
+                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd,
                        thresh_X, thresh_X_above) + Z_likelihood_conditional(prop_Z, Cor, cholesky_inv);
-        log_denom = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], X_s[idx], 
-                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd, 
+        log_denom = marg_transform_data_mixture_me_likelihood_uni(Y[idx], X[idx], X_s[idx],
+                       cen[idx], cen_above[idx], prob_below, prob_above, Loc[idx], Scale[idx], Shape[idx], delta, tau_sqd,
                        thresh_X, thresh_X_above) + Z_likelihood_conditional(Z, Cor, cholesky_inv);
         
         with np.errstate(over='raise'):
@@ -849,7 +849,7 @@ def Z_update_onetime(Y, X, R, Z, cen, cen_above, prob_below, prob_above,
     return accept
 
 
-def Rt_update_mixture_me_likelihood(data, params, X, Z, cen, cen_above, 
+def Rt_update_mixture_me_likelihood(data, params, X, Z, cen, cen_above,
                 prob_below, prob_above, Loc, Scale, Shape, delta, tau_sqd,
                 thresh_X, thresh_X_above):
   Y = data
@@ -860,8 +860,8 @@ def Rt_update_mixture_me_likelihood(data, params, X, Z, cen, cen_above,
   else:
       ## Generate X_s
       X_s = (R**(delta/(1-delta)))*norm_to_Pareto(Z)
-      ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, 
-                prob_below, prob_above, Loc, Scale, Shape, delta, tau_sqd, 
+      ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above,
+                prob_below, prob_above, Loc, Scale, Shape, delta, tau_sqd,
                 thresh_X, thresh_X_above)
       return ll
   
@@ -881,13 +881,13 @@ def Rt_update_mixture_me_likelihood(data, params, X, Z, cen, cen_above,
 
 ## -------------------------------------------------------------------------- ##
 ## For the generic Metropolis sampler
-## Samples from the parameters of the mixing distribution, for the scale 
-## mixture of Gaussians, where the mixing distribution comes from 
+## Samples from the parameters of the mixing distribution, for the scale
+## mixture of Gaussians, where the mixing distribution comes from
 ## Huser-wadsworth scale mixture.
 ##
 ##
 
-def delta_update_mixture_me_likelihood(data, params, R, Z, cen, cen_above, 
+def delta_update_mixture_me_likelihood(data, params, R, Z, cen, cen_above,
                                        prob_below, prob_above,
                                        Loc, Scale, Shape, tau_sqd):
   Y = data
@@ -898,7 +898,7 @@ def delta_update_mixture_me_likelihood(data, params, R, Z, cen, cen_above,
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
   X_s = (R**(delta/(1-delta)))*norm_to_Pareto(Z)
   
-  ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc, 
+  ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc,
                 Scale, Shape, delta, tau_sqd)
 
   return ll
@@ -911,8 +911,8 @@ def delta_update_mixture_me_likelihood(data, params, R, Z, cen, cen_above,
 ##
 ## -------------------------------------------------------------------------- ##
 ## For the generic Metropolis sampler
-## Samples from the measurement error variance (on the X scale), for the scale 
-## mixture of Gaussians, where the   
+## Samples from the measurement error variance (on the X scale), for the scale
+## mixture of Gaussians, where the
 ## mixing distribution comes from Huser-wadsworth scale mixture.
 ## Just a wrapper for marg.transform.data.mixture.me.likelihood
 ##
@@ -926,19 +926,19 @@ def delta_update_mixture_me_likelihood(data, params, R, Z, cen, cen_above,
 ##                                     independent given X(s)
 ## X.s ............................... the latent Gaussian process, without the
 ##                                     measurement error
-## cen 
+## cen
 ## prob.below
 ## theta.gpd
 ## delta
 ##
-def tau_update_mixture_me_likelihood(data, params, X_s, cen, cen_above, prob_below, prob_above, 
+def tau_update_mixture_me_likelihood(data, params, X_s, cen, cen_above, prob_below, prob_above,
                                    Loc, Scale, Shape, delta):
   Y = data
   tau_sqd = params
 
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
   
-  ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc, 
+  ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above, Loc,
                                             Scale, Shape, delta, tau_sqd)
   
   return ll
@@ -950,8 +950,8 @@ def tau_update_mixture_me_likelihood(data, params, X_s, cen, cen_above, prob_bel
 
 ## -------------------------------------------------------------------------- ##
 ## Update covariance parameters. For the generic Metropolis sampler
-## Samples from the parameters of the underlying Gaussian process, for the scale 
-## mixture of Gaussians, where the   
+## Samples from the parameters of the underlying Gaussian process, for the scale
+## mixture of Gaussians, where the
 ## mixing distribution comes from Huser-wadsworth scale mixture.
 ##
 ##
@@ -1075,7 +1075,7 @@ def loc0_gev_update_mixture_me_likelihood(data, params, Y, X_s, cen, cen_above, 
       return -np.inf
   
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
-  ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s,  cen, cen_above, prob_below, prob_above, 
+  ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s,  cen, cen_above, prob_below, prob_above,
                                     Loc, Scale, Shape, delta, tau_sqd, thresh_X, thresh_X_above)
   return ll
 
@@ -1271,7 +1271,7 @@ def theta_c_param_updata_me_likelihood(data, param, nu, mean, Cluster_which, S_c
         inv_cluster.append(cholesky_inv)
     return cluster_mvn(data, mean, Cluster_which, Cor_clusters, inv_cluster)
 
-##         
+##
 ## -------------------------------------------------------------------------- ##
 
 
@@ -1285,8 +1285,8 @@ def theta_c_param_updata_me_likelihood(data, param, nu, mean, Cluster_which, S_c
 ## --- cluster_num: which cluster to update?
 ## --- inv_Z_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster, 
-                                 Y, X, R, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
+def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
+                                 Y, X, R, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Scale, Shape, thresh_X, thresh_X_above,
                                  lambda_current_cluster, random_generator):
     # 1. Obtain the current parameters in the chosen cluster
@@ -1295,7 +1295,7 @@ def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z
     n_current_cluster = len(current_params)
     accept = 0
     
-    # 2. Propose parameters 
+    # 2. Propose parameters
     tmp_parmas_star = np.matmul(np.linalg.inv(inv_Z_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
     params_star = np.matmul(inv_Z_cluster[cluster_num][0].T , tmp_parmas_star)
     
@@ -1305,13 +1305,13 @@ def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z
     # 3. Calculate likelihoods
     X_s_which = (R**(delta/(1-delta)))*norm_to_Pareto(current_params)
     prop_X_s_which = (R**(delta/(1-delta)))*norm_to_Pareto(params_star)
-    log_num = marg_transform_data_mixture_me_likelihood(Y[which], X[which], prop_X_s_which, 
-                       cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd,  
-                       thresh_X, thresh_X_above)  + dmvn(params_star, Cor_Z_clusters[cluster_num], 
+    log_num = marg_transform_data_mixture_me_likelihood(Y[which], X[which], prop_X_s_which,
+                       cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd,
+                       thresh_X, thresh_X_above)  + dmvn(params_star, Cor_Z_clusters[cluster_num],
                                                          mean=0, cholesky_inv =inv_Z_cluster[cluster_num])
-    log_denom = marg_transform_data_mixture_me_likelihood(Y[which], X[which], X_s_which, 
-                       cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd, 
-                       thresh_X, thresh_X_above) + dmvn(current_params, Cor_Z_clusters[cluster_num], 
+    log_denom = marg_transform_data_mixture_me_likelihood(Y[which], X[which], X_s_which,
+                       cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd,
+                       thresh_X, thresh_X_above) + dmvn(current_params, Cor_Z_clusters[cluster_num],
                                                          mean=0, cholesky_inv =inv_Z_cluster[cluster_num])
     
     # 4. Decide whether to update or not
@@ -1325,7 +1325,7 @@ def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z
     #result = (X_s,accept)
     return accept
 
-##         
+##
 ## -------------------------------------------------------------------------- ##
 
 
@@ -1369,8 +1369,8 @@ def loc0_vec_gev_update_mixture_me_likelihood(data, params, X_s, cen, cen_above,
 ## --- cluster_num: which cluster to update?
 ## --- inv_loc0_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster, 
-                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
+def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster,
+                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  loc1, Scale, Shape, Time, thresh_X, thresh_X_above, loc0_mean,
                                  lambda_current_cluster, random_generator):
     # 1. Obtain the current parameters in the chosen cluster
@@ -1380,7 +1380,7 @@ def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clust
     n_current_cluster = len(current_params)
     accept = 0
     
-    # 2. Propose parameters 
+    # 2. Propose parameters
     tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
     params_star = np.matmul(inv_loc0_cluster[cluster_num][0].T , tmp_parmas_star)
     
@@ -1388,13 +1388,13 @@ def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clust
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
-    loc0_star = np.empty(loc0.shape[0]); loc0_star[:] = loc0
-    loc0_star[which] = params_star
-    log_num = loc0_vec_gev_update_mixture_me_likelihood(Y, loc0_star, X_s, cen, cen_above, prob_below, prob_above,
-                         delta, tau_sqd, loc1, Scale, Shape, Time, thresh_X, thresh_X_above) + dmvn(
+    # loc0_star = np.empty(loc0.shape[0]); loc0_star[:] = loc0
+    # loc0_star[which] = params_star
+    log_num = loc0_vec_gev_update_mixture_me_likelihood(Y[which,:], params_star, X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                         delta, tau_sqd, loc1[which], Scale[which,:], Shape[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          params_star, Cor_loc0_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_loc0_cluster[cluster_num])
-    log_denom = loc0_vec_gev_update_mixture_me_likelihood(Y, loc0, X_s, cen, cen_above, prob_below, prob_above,
-                         delta, tau_sqd, loc1, Scale, Shape, Time, thresh_X, thresh_X_above) + dmvn(
+    log_denom = loc0_vec_gev_update_mixture_me_likelihood(Y[which,:], current_params, X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                         delta, tau_sqd, loc1[which], Scale[which,:], Shape[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          current_params, Cor_loc0_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_loc0_cluster[cluster_num])
     
     # 4. Decide whether to update or not
@@ -1408,7 +1408,7 @@ def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clust
     #result = (X_s,accept)
     return accept
 
-##         
+##
 ## -------------------------------------------------------------------------- ##
 
 
@@ -1451,9 +1451,9 @@ def loc1_vec_gev_update_mixture_me_likelihood(data, params, X_s, cen, cen_above,
 ## --- cluster_num: which cluster to update?
 ## --- inv_loc1_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster, 
-                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
-                                 loc0, Scale, Shape, Time, thresh_X, thresh_X_above, loc1_mean, 
+def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster,
+                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
+                                 loc0, Scale, Shape, Time, thresh_X, thresh_X_above, loc1_mean,
                                  lambda_current_cluster, random_generator):
     # 1. Obtain the current parameters in the chosen cluster
     which = Cluster_which[cluster_num]
@@ -1462,7 +1462,7 @@ def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clust
     n_current_cluster = len(current_params)
     accept = 0
     
-    # 2. Propose parameters 
+    # 2. Propose parameters
     tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
     params_star = np.matmul(inv_loc1_cluster[cluster_num][0].T , tmp_parmas_star)
     
@@ -1470,13 +1470,13 @@ def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clust
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
-    loc1_star = np.empty(loc1.shape[0]); loc1_star[:] = loc1
-    loc1_star[which] = params_star
-    log_num = loc1_vec_gev_update_mixture_me_likelihood(Y, loc1_star, X_s, cen, cen_above, prob_below, prob_above,
-                         delta, tau_sqd, loc0, Scale, Shape, Time, thresh_X, thresh_X_above) + dmvn(
+    # loc1_star = np.empty(loc1.shape[0]); loc1_star[:] = loc1
+    # loc1_star[which] = params_star
+    log_num = loc1_vec_gev_update_mixture_me_likelihood(Y[which,:], params_star, X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                         delta, tau_sqd, loc0[which], Scale[which,:], Shape[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          params_star, Cor_loc1_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_loc1_cluster[cluster_num])
-    log_denom = loc1_vec_gev_update_mixture_me_likelihood(Y, loc1, X_s, cen, cen_above, prob_below, prob_above,
-                         delta, tau_sqd, loc0, Scale, Shape, Time, thresh_X, thresh_X_above) + dmvn(
+    log_denom = loc1_vec_gev_update_mixture_me_likelihood(Y[which,:], current_params, X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                         delta, tau_sqd, loc0[which], Scale[which,:], Shape[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          current_params, Cor_loc1_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_loc1_cluster[cluster_num])
 
     # 4. Decide whether to update or not
@@ -1490,7 +1490,7 @@ def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clust
     #result = (X_s,accept)
     return accept
 
-##         
+##
 ## -------------------------------------------------------------------------- ##
 
 
@@ -1534,8 +1534,8 @@ def scale_vec_gev_update_mixture_me_likelihood(data, params, X_s, cen, cen_above
 ## --- cluster_num: which cluster to update?
 ## --- inv_scale_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster, 
-                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
+def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster,
+                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Shape, Time, thresh_X, thresh_X_above, scale_mean,
                                  lambda_current_cluster, random_generator):
     # 1. Obtain the current parameters in the chosen cluster
@@ -1545,7 +1545,7 @@ def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_cl
     n_current_cluster = len(current_params)
     accept = 0
     
-    # 2. Propose parameters 
+    # 2. Propose parameters
     tmp_parmas_star = np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , np.log(current_params)) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
     log_params_star = np.matmul(inv_scale_cluster[cluster_num][0].T , tmp_parmas_star)
     
@@ -1553,13 +1553,13 @@ def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_cl
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
-    scale_star = np.empty(scale.shape[0]); scale_star[:] = scale
-    scale_star[which] = np.exp(log_params_star)
-    log_num = scale_vec_gev_update_mixture_me_likelihood(Y, scale_star, X_s, cen, cen_above, prob_below, prob_above,
-                         delta, tau_sqd, Loc, Shape, Time, thresh_X, thresh_X_above) + dmvn(
+    # scale_star = np.empty(scale.shape[0]); scale_star[:] = scale
+    # scale_star[which] = np.exp(log_params_star)
+    log_num = scale_vec_gev_update_mixture_me_likelihood(Y[which,:], np.exp(log_params_star), X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                         delta, tau_sqd, Loc[which,:], Shape[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          log_params_star, Cor_scale_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_scale_cluster[cluster_num])
-    log_denom = scale_vec_gev_update_mixture_me_likelihood(Y, scale, X_s, cen, cen_above, prob_below, prob_above,
-                         delta, tau_sqd, Loc, Shape, Time, thresh_X, thresh_X_above) + dmvn(
+    log_denom = scale_vec_gev_update_mixture_me_likelihood(Y[which,:], current_params, X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                         delta, tau_sqd, Loc[which,:], Shape[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          np.log(current_params), Cor_scale_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_scale_cluster[cluster_num])
     
     # 4. Decide whether to update or not
@@ -1573,7 +1573,7 @@ def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_cl
     #result = (X_s,accept)
     return accept
 
-##         
+##
 ## -------------------------------------------------------------------------- ##
 
 
@@ -1607,7 +1607,7 @@ def shape_vec_gev_update_mixture_me_likelihood(data, params, X_s, cen, cen_above
   
   X = X_update(Y, cen, cen_above, delta, tau_sqd, Loc, Scale, Shape)
   ll = marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above, prob_below, prob_above,
-            Loc, Scale, Shape, delta, tau_sqd, thresh_X, thresh_X_above) 
+            Loc, Scale, Shape, delta, tau_sqd, thresh_X, thresh_X_above)
   return ll
 
 
@@ -1617,9 +1617,9 @@ def shape_vec_gev_update_mixture_me_likelihood(data, params, X_s, cen, cen_above
 ## --- cluster_num: which cluster to update?
 ## --- inv_shape_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster, 
-                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd, 
-                                 Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean, 
+def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster,
+                                 Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
+                                 Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean,
                                  lambda_current_cluster, random_generator):
     # 1. Obtain the current parameters in the chosen cluster
     which = Cluster_which[cluster_num]
@@ -1628,7 +1628,7 @@ def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_cl
     n_current_cluster = len(current_params)
     accept = 0
     
-    # 2. Propose parameters 
+    # 2. Propose parameters
     tmp_parmas_star = np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
     params_star = np.matmul(inv_shape_cluster[cluster_num][0].T , tmp_parmas_star)
     
@@ -1636,13 +1636,13 @@ def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_cl
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
     # 3. Calculate likelihoods
-    shape_star = np.empty(shape.shape[0]); shape_star[:] = shape
-    shape_star[which] = params_star
-    log_num = shape_vec_gev_update_mixture_me_likelihood(Y, shape_star, X_s, cen, cen_above, prob_below, prob_above,
-                     delta, tau_sqd, Loc, Scale, Time, thresh_X, thresh_X_above) + dmvn(
+    # shape_star = np.empty(shape.shape[0]); shape_star[:] = shape
+    # shape_star[which] = params_star
+    log_num = shape_vec_gev_update_mixture_me_likelihood(Y[which,:], params_star, X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                     delta, tau_sqd, Loc[which,:], Scale[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          params_star, Cor_shape_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_shape_cluster[cluster_num])
-    log_denom = shape_vec_gev_update_mixture_me_likelihood(Y, shape, X_s, cen, cen_above, prob_below, prob_above,
-                     delta, tau_sqd, Loc, Scale, Time, thresh_X, thresh_X_above) + dmvn(
+    log_denom = shape_vec_gev_update_mixture_me_likelihood(Y[which,:], current_params, X_s[which,:], cen[which,:], cen_above[which,:], prob_below, prob_above,
+                     delta, tau_sqd, Loc[which,:], Scale[which,:], Time, thresh_X, thresh_X_above) + dmvn(
                          current_params, Cor_shape_clusters[cluster_num], mean=current_mean, cholesky_inv =inv_shape_cluster[cluster_num])
     
     # 4. Decide whether to update or not
@@ -1656,5 +1656,5 @@ def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_cl
     #result = (X_s,accept)
     return accept
 
-##         
+##
 ## -------------------------------------------------------------------------- ##
