@@ -674,7 +674,7 @@ if __name__ == "__main__":
                
                sigma_m_loc0_cluster[:] = np.exp(np.log(sigma_m_loc0_cluster) + gamma1*(loc0_accept/thinning - r_opt_md))
                loc0_accept[:] = np.repeat(0,n_clusters)
-               print(' Done with '+str(index)+", mean accept="+str(np.mean(loc0_accept))+", mean sigma_m_loc0="+str(np.mean(sigma_m_loc0_cluster))+",\n")
+               # print(' Done with '+str(index)+", mean accept="+str(np.mean(loc0_accept))+", mean sigma_m_loc0="+str(np.mean(sigma_m_loc0_cluster))+",\n")
                
                sigma_m_loc1_cluster[:] = np.exp(np.log(sigma_m_loc1_cluster) + gamma1*(loc1_accept/thinning - r_opt_md))
                loc1_accept[:] = np.repeat(0,n_clusters)
