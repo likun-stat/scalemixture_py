@@ -86,7 +86,7 @@ if __name__ == "__main__":
    eps = 1e-6 # a small number
   
    # Hyper parameters for the prior of the mixing distribution parameters and
-   hyper_params_delta = np.array([0.1,0.7])
+   hyper_params_delta = np.array([0.2,0.7])
    hyper_params_tau_sqd = np.array([0.1,0.1])
    hyper_params_theta_c = np.array([0, 20])
    hyper_params_theta_c_loc0 = np.array([0, 20])
@@ -150,8 +150,14 @@ if __name__ == "__main__":
    wh_to_plot_Xs = wh_to_plot_Xs.astype(int)
 
    
-   thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
-   thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
+   if prob_below==0:
+        thresh_X = -np.inf
+   else:
+        thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
+   if prob_above==1:
+        thresh_X_above = np.inf
+   else:
+        thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
    
    # Cholesky decomposition of the correlation matrix
    # tmp_vec = np.ones(n_s)

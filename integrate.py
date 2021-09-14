@@ -694,8 +694,14 @@ def marg_transform_data_mixture_me_likelihood(Y, X, X_s, cen, cen_above,
                 prob_below, prob_above, Loc, Scale, Shape,
                 delta, tau_sqd, thresh_X=np.nan, thresh_X_above=np.nan):
   if np.isnan(thresh_X):
-     thresh_X = qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
-     thresh_X_above = qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
+     if prob_below==0:
+         thresh_X = -np.inf
+     else:
+         thresh_X = qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
+     if prob_above==1:
+         thresh_X_above = np.inf
+     else:
+         thresh_X_above = qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
   sd = math.sqrt(tau_sqd)
   
   ## Initialize space to store the log-likelihoods for each observation:
@@ -725,9 +731,16 @@ def marg_transform_data_mixture_me_likelihood_uni(Y, X, X_s, cen, cen_above,
                    prob_below, prob_above, Loc, Scale, Shape,
                    delta, tau_sqd, thresh_X=np.nan, thresh_X_above=np.nan):
   if np.isnan(thresh_X):
-     thresh_X = qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
-     thresh_X_above = qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
+     if prob_below==0:
+         thresh_X = -np.inf
+     else:
+         thresh_X = qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
+     if prob_above==1:
+         thresh_X_above = np.inf
+     else:
+         thresh_X_above = qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
   sd = math.sqrt(tau_sqd)
+  
   ll=np.array(np.nan)
   if cen:
      ll = norm.logcdf(thresh_X, loc=X_s, scale=sd)
