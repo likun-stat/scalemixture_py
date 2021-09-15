@@ -192,8 +192,14 @@ if __name__ == "__main__":
    n_covariates = len(beta_loc0)
    Dist = initial_values['Dist']
    
-   thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
-   thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
+   if prob_below==0:
+        thresh_X = -np.inf
+   else:
+        thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
+   if prob_above==1:
+        thresh_X_above = np.inf
+   else:
+        thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
    
    # Cholesky decomposition of the correlation matrix
    # tmp_vec = np.ones(n_s)
@@ -355,8 +361,14 @@ if __name__ == "__main__":
            tau_sqd_accept = tau_sqd_accept + Metr_tau_sqd['acc_prob']
            tau_sqd = Metr_tau_sqd['trace'][0,1]
           
-           thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
-           thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
+           if prob_below==0:
+               thresh_X = -np.inf
+           else:
+               thresh_X = utils.qmixture_me_interp(prob_below, delta = delta, tau_sqd = tau_sqd)
+           if prob_above==1:
+               thresh_X_above = np.inf
+           else:
+               thresh_X_above = utils.qmixture_me_interp(prob_above, delta = delta, tau_sqd = tau_sqd)
            
            # Update theta_c
            Metr_theta_c = sampler.static_metr(Z, theta_c, utils.theta_c_update_mixture_me_likelihood,
