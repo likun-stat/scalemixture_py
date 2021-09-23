@@ -341,7 +341,7 @@ def dmixture_me_C(xval, delta, tau_sqd):
     my_lower_bound = 100*sd
     I_1 = si.quad(func_d, -my_lower_bound, xval-1, args=(xval, tau_sqd, tmp1, tmp2, tmp3))
     tmp_res = - I_1[0]/(np.sqrt(2*np.pi)*sd)
-    if(tmp_res<1e-4):
+    if xval>1 and tmp_res<1e-4:
         tmp_res_asymp = asymptotic_d(xval, delta)
         if tmp_res/tmp_res_asymp<0.1:
             tmp_res = tmp_res_asymp
@@ -376,7 +376,7 @@ def dmixture_me_uni(xval, delta, tau_sqd):
     I_1 = si.quad(mix_dens_integrand, -my_lower_bound, xval-1, args=(xval, delta, tau_sqd, tmp1))
     
     tmp_res = -I_1[0]/math.sqrt(2*math.pi*tau_sqd)
-    if(tmp_res<1e-4):
+    if xval>1 and tmp_res<1e-4:
         tmp_res_asymp = asymptotic_d(xval, delta)
         if tmp_res/tmp_res_asymp<0.1:
             tmp_res = tmp_res_asymp
