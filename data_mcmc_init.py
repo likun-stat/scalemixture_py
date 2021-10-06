@@ -107,7 +107,9 @@ if __name__ == "__main__":
    tau_sqd = initial_values['tau_sqd']
    prob_below = initial_values['prob_below']
    prob_above = initial_values['prob_above']
-   
+   grid = utils.density_interp_grid(delta, tau_sqd)
+   xp = grid[0]; den_p = grid[1]
+      
    X = initial_values['X']
    Z = initial_values['Z']
    R = initial_values['R']
@@ -311,14 +313,14 @@ if __name__ == "__main__":
                                  sigma_m_Z_cluster[cluster_num], random_generator)
       
        # Update R
-       Metr_R = sampler.static_metr(Y_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood,
+       Metr_R = sampler.static_metr(Y_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood_interp,
                            priors.R_prior, 1, 2,
                            random_generator,
                            np.nan, sigma_m['R_1t'], False,
                            X_onetime, Z_onetime,
                            cen[:,rank], cen_above[:,rank], prob_below, prob_above,
                            Loc[:,rank], Scale[:,rank], Shape[:,rank], delta, tau_sqd,
-                           thresh_X, thresh_X_above)
+                           xp, den_p, thresh_X, thresh_X_above)
        R_accept = R_accept + Metr_R['acc_prob']
        R_onetime = Metr_R['trace'][0,1]
        
@@ -339,7 +341,7 @@ if __name__ == "__main__":
            # print('beta_shape_accept=',beta_shape_accept, ', iter=', iter)
 
            # Update delta
-           Metr_delta = sampler.static_metr(Y, delta, utils.delta_update_mixture_me_likelihood, priors.interval_unif,
+           Metr_delta = sampler.static_metr(Y, delta, utils.delta_update_mixture_me_likelihood_interp, priors.interval_unif,
                    hyper_params_delta, 2,
                    random_generator,
                    np.nan, sigma_m['delta'], False,
@@ -349,14 +351,17 @@ if __name__ == "__main__":
            X_s[:] = (R**(delta/(1-delta)))*utils.norm_to_Pareto(Z)
            
            # Update tau_sqd
-           Metr_tau_sqd = sampler.static_metr(Y, tau_sqd, utils.tau_update_mixture_me_likelihood, priors.invGamma_prior,
+           Metr_tau_sqd = sampler.static_metr(Y, tau_sqd, utils.tau_update_mixture_me_likelihood_interp, priors.invGamma_prior,
                            hyper_params_tau_sqd, 2,
                            random_generator,
                            np.nan, sigma_m['tau_sqd'], False,
                            X_s, cen, cen_above, prob_below, prob_above, Loc, Scale, Shape, delta)
            tau_sqd_accept = tau_sqd_accept + Metr_tau_sqd['acc_prob']
            tau_sqd = Metr_tau_sqd['trace'][0,1]
-          
+           
+           grid = utils.density_interp_grid(delta, tau_sqd)
+           xp = grid[0]; den_p = grid[1]
+           
            if prob_below==0:
                thresh_X = -np.inf
            else:
@@ -505,25 +510,25 @@ if __name__ == "__main__":
             
            # Update loc0
            for cluster_num in np.arange(n_clusters):
-               loc0_accept[cluster_num] += utils.update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster,
+               loc0_accept[cluster_num] += utils.update_loc0_GEV_one_cluster_interp(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster,
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
-                                                                            loc1, Scale, Shape, Time, thresh_X, thresh_X_above, loc0_mean,
+                                                                            loc1, Scale, Shape, Time, xp, den_p, thresh_X, thresh_X_above, loc0_mean,
                                                                             sigma_m_loc0_cluster[cluster_num], random_generator)
            
            # Update loc1
            for cluster_num in np.arange(n_clusters):
-               loc1_accept[cluster_num] += utils.update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster,
+               loc1_accept[cluster_num] += utils.update_loc1_GEV_one_cluster_interp(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster,
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
-                                                                            loc0, Scale, Shape, Time, thresh_X, thresh_X_above, loc1_mean,
+                                                                            loc0, Scale, Shape, Time, xp, den_p, thresh_X, thresh_X_above, loc1_mean,
                                                                             sigma_m_loc1_cluster[cluster_num], random_generator)
            Loc = np.tile(loc0, n_t) + np.tile(loc1, n_t)*np.repeat(Time,n_s)
            Loc = Loc.reshape((n_s,n_t),order='F')
            
            # Update scale
            for cluster_num in np.arange(n_clusters):
-               scale_accept[cluster_num] += utils.update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster,
+               scale_accept[cluster_num] += utils.update_scale_GEV_one_cluster_interp(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster,
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
-                                                                            Loc, Shape, Time, thresh_X, thresh_X_above, scale_mean,
+                                                                            Loc, Shape, Time, xp, den_p, thresh_X, thresh_X_above, scale_mean,
                                                                             sigma_m_scale_cluster[cluster_num], random_generator)
            Scale = np.tile(scale, n_t)
            Scale = Scale.reshape((n_s,n_t),order='F')
@@ -545,6 +550,8 @@ if __name__ == "__main__":
        # *** Broadcast items ***
        delta = comm.bcast(delta,root=0)
        tau_sqd = comm.bcast(tau_sqd,root=0)
+       xp = comm.bcast(xp,root=0)
+       den_p = comm.bcast(den_p,root=0)
        thresh_X = comm.bcast(thresh_X,root=0)
        thresh_X_above = comm.bcast(thresh_X_above,root=0)
        theta_c = comm.bcast(theta_c,root=0)
