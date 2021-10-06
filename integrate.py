@@ -183,7 +183,7 @@ def find_xrange_pmixture_me(min_p, max_p, x_init, delta, tau_sqd):#, relerr = 1e
     while p_min_x > min_p:
         # print('left x is {}'.format(min_x))
         # print('F({})={}'.format(min_x, p_min_x))
-        min_x = min_x-40/delta
+        min_x = min_x-5/delta
         p_min_x = pmixture_me_C(min_x, delta, tau_sqd)
     
     x_range[0] = min_x
