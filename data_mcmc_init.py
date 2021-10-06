@@ -53,7 +53,7 @@ if __name__ == "__main__":
    comm = MPI.COMM_WORLD
    rank = comm.Get_rank()
    size = comm.Get_size()
-   thinning = 10; echo_interval = 100; n_updates = 30001
+   thinning = 10; echo_interval = 20; n_updates = 20001
   
    # Load data input
    with open('Mark_data_input.pkl', 'rb') as f:
@@ -86,7 +86,7 @@ if __name__ == "__main__":
    eps = 1e-6 # a small number
   
    # Hyper parameters for the prior of the mixing distribution parameters and
-   hyper_params_delta = np.array([0.2,0.7])
+   hyper_params_delta = np.array([0.1,0.7])
    hyper_params_tau_sqd = np.array([0.1,0.1])
    hyper_params_theta_c = np.array([0, 20])
    hyper_params_theta_c_loc0 = np.array([0, 20])
@@ -307,9 +307,9 @@ if __name__ == "__main__":
       
        # Update Z
        for cluster_num in np.arange(n_clusters):
-             Z_1t_accept[cluster_num] += utils.update_Z_1t_one_cluster(Z_onetime, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
+             Z_1t_accept[cluster_num] += utils.update_Z_1t_one_cluster_interp(Z_onetime, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
                                  Y_onetime, X_onetime, R_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above, delta, tau_sqd,
-                                 Loc[:,rank], Scale[:,rank], Shape[:,rank], thresh_X, thresh_X_above,
+                                 Loc[:,rank], Scale[:,rank], Shape[:,rank], xp, den_p, thresh_X, thresh_X_above,
                                  sigma_m_Z_cluster[cluster_num], random_generator)
       
        # Update R

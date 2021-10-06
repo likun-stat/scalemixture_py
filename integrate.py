@@ -1445,6 +1445,46 @@ def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z
     #result = (X_s,accept)
     return accept
 
+
+def update_Z_1t_one_cluster_interp(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
+                                 Y, X, R, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
+                                 Loc, Scale, Shape, xp, den_p, thresh_X, thresh_X_above,
+                                 lambda_current_cluster, random_generator):
+    # 1. Obtain the current parameters in the chosen cluster
+    which = Cluster_which[cluster_num]
+    current_params = Z[which]
+    n_current_cluster = len(current_params)
+    accept = 0
+    
+    # 2. Propose parameters
+    tmp_parmas_star = np.matmul(np.linalg.inv(inv_Z_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(inv_Z_cluster[cluster_num][0].T , tmp_parmas_star)
+    
+    # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
+    # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_Z_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
+    
+    # 3. Calculate likelihoods
+    X_s_which = (R**(delta/(1-delta)))*norm_to_Pareto(current_params)
+    prop_X_s_which = (R**(delta/(1-delta)))*norm_to_Pareto(params_star)
+    log_num = marg_transform_data_mixture_me_likelihood_interp(Y[which], X[which], prop_X_s_which,
+                       cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd,
+                       xp, den_p, thresh_X, thresh_X_above)  + dmvn(params_star, Cor_Z_clusters[cluster_num],
+                                                         mean=0, cholesky_inv =inv_Z_cluster[cluster_num])
+    log_denom = marg_transform_data_mixture_me_likelihood_interp(Y[which], X[which], X_s_which,
+                       cen[which], cen_above[which], prob_below, prob_above, Loc[which], Scale[which], Shape[which], delta, tau_sqd,
+                       xp, den_p, thresh_X, thresh_X_above) + dmvn(current_params, Cor_Z_clusters[cluster_num],
+                                                         mean=0, cholesky_inv =inv_Z_cluster[cluster_num])
+    
+    # 4. Decide whether to update or not
+    r = np.exp(log_num - log_denom)
+    if ~np.isfinite(r):
+        r = 0
+    if random_generator.uniform(0,1,1)<r:
+        Z[which] = params_star  # changes argument 'Z' directly
+        accept = 1
+    
+    #result = (X_s,accept)
+    return accept
 ##
 ## -------------------------------------------------------------------------- ##
 
