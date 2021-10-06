@@ -86,7 +86,7 @@ def pmixture_me_C(xval, delta, tau_sqd):
             tmp = asymptotic_p(xval, delta)
         return tmp
     my_lower_bound = 100*sd
-    I_1 = si.quad(func_p, -my_lower_bound, xval-1, args=(xval, tau_sqd, tmp1, tmp2, tmp3, tmp4))
+    I_1 = si.quad(func_p, -my_lower_bound, xval-1, args=(xval, tau_sqd, tmp1, tmp2, tmp3, tmp4), full_output=1)
     tmp = - I_1[0]/(np.sqrt(2*np.pi)*sd)
     if tmp<1e-5 and xval>10:
         return asymptotic_p(xval, delta)
@@ -339,7 +339,7 @@ def dmixture_me_C(xval, delta, tau_sqd):
             tmp = asymptotic_d(xval, delta)
         return tmp
     my_lower_bound = 100*sd
-    I_1 = si.quad(func_d, -my_lower_bound, xval-1, args=(xval, tau_sqd, tmp1, tmp2, tmp3))
+    I_1 = si.quad(func_d, -my_lower_bound, xval-1, args=(xval, tau_sqd, tmp1, tmp2, tmp3), full_output=1)
     tmp_res = - I_1[0]/(np.sqrt(2*np.pi)*sd)
     if xval>1 and tmp_res<1e-4:
         tmp_res_asymp = asymptotic_d(xval, delta)
@@ -373,7 +373,7 @@ def dmixture_me_uni(xval, delta, tau_sqd):
     sd = math.sqrt(tau_sqd)
     # Nugget error gets to 100 times the sd? Negligible!
     my_lower_bound = 100*sd
-    I_1 = si.quad(mix_dens_integrand, -my_lower_bound, xval-1, args=(xval, delta, tau_sqd, tmp1))
+    I_1 = si.quad(mix_dens_integrand, -my_lower_bound, xval-1, args=(xval, delta, tau_sqd, tmp1), full_output=1)
     
     tmp_res = -I_1[0]/math.sqrt(2*math.pi*tau_sqd)
     if xval>1 and tmp_res<1e-4:
