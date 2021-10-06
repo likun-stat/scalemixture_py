@@ -406,11 +406,12 @@ dmixture_me_py = np.vectorize(dmixture_me_uni)
 
 ## Approach 3: interpolate using a grid of density values
 def density_interp_grid(delta, tau_sqd, grid_size=400):
+    xp_0 = np.linspace(-100, -15, int(grid_size/8), endpoint = False)
     xp_1 = np.linspace(-15, 80, grid_size, endpoint = False)
     xp_2 = np.linspace(80, 200, int(grid_size/8), endpoint = False)
     xp_3 = np.linspace(200, 1000, int(grid_size/20), endpoint = False)
     xp_4 = np.linspace(1000, 15000, int(grid_size/40), endpoint = False)
-    xp = np.concatenate((xp_1, xp_2, xp_3, xp_4))
+    xp = np.concatenate((xp_0, xp_1, xp_2, xp_3, xp_4))
     
     xp = np.ascontiguousarray(xp, np.float64) #C contiguous order: xp.flags['C_CONTIGUOUS']=True?
     den_p = dmixture_me(xp, delta, tau_sqd)
@@ -422,10 +423,8 @@ def dmixture_me_interpo(xvals, xp, den_p):
         xvals = np.array(xvals)
     
     den_vec = np.empty(xvals.shape)
-    which = np.logical_and(xvals >= -15, xvals <=9550)
-    tck = interp.splrep(xp, den_p)
-    den_vec[which] = interp.splev(xvals[which], tck)
-    if np.any(which): den_vec[~which] = 0
+    tck = interp.PchipInterpolator(xp, den_p, extrapolate=True)
+    den_vec = tck(xvals)
         
     return den_vec        
 
