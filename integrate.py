@@ -488,7 +488,7 @@ def dmixture_me_interpo(xvals, xp, den_p):
 ## and a vector of parameters
 ##
 
-def corr_fn(r, theta):
+def corr_fn(r, theta, sill=1):
     if type(r).__module__!='numpy' or isinstance(r, np.float64):
       r = np.array(r)
     if np.any(r<0):
@@ -500,7 +500,7 @@ def corr_fn(r, theta):
     part1 = 2 ** (1 - nu) / gamma(nu)
     part2 = (np.sqrt(2 * nu) * r / range) ** nu
     part3 = kv(nu, np.sqrt(2 * nu) * r / range)
-    return part1 * part2 * part3
+    return sill*part1 * part2 * part3
 
 ##
 ## -------------------------------------------------------------------------- ##
@@ -1115,23 +1115,6 @@ def range_update_mixture_me_likelihood_eigen(data, params, nu, S, V=np.nan, d=np
     ll[idx] = Z_likelihood_conditional(Z[:,idx], V, d)
   return np.sum(ll)
 
-def theta_c_update_mixture_me_likelihood(data, params, S, Cor=None, cholesky_inv=None):
-  Z = data
-  range = params[0]
-  nu = params[1]
-  if len(Z.shape)==1:
-      Z = Z.reshape((Z.shape[0],1))
-  n_t = Z.shape[1]
-  
-  if Cor is None:
-    Cor = corr_fn(S, np.array([range,nu]))
-    cholesky_inv = lapack.dposv(Cor,Z[:,0]) # Computes the solution to Cor^-1 * Z
-
-  ll = np.empty(n_t)
-  ll[:]=np.nan
-  for idx in np.arange(n_t):
-    ll[idx] = Z_likelihood_conditional(Z[:,idx], Cor, cholesky_inv)
-  return np.sum(ll)
 
 def range_update_mixture_me_likelihood(data, params, nu, S, Cor=None, cholesky_inv=None):
   Z = data
@@ -1382,13 +1365,26 @@ from scipy.linalg import cholesky
 def theta_c_param_updata_me_likelihood(data, param, nu, mean, Cluster_which, S_clusters):
     Cor_clusters=list()
     inv_cluster=list()
-    theta_c = np.array([param, nu])
+    theta_c = np.array([param[0], nu])
+    sill = param[1]
     for idx, bool_vec in enumerate(Cluster_which):
-        Cor_tmp = corr_fn(S_clusters[idx], theta_c)
+        Cor_tmp = corr_fn(S_clusters[idx], theta_c, sill)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_clusters.append(Cor_tmp)
         inv_cluster.append(cholesky_inv)
     return cluster_mvn(data, mean, Cluster_which, Cor_clusters, inv_cluster)
+
+## Fix the sill parameter
+def theta_c_update_mixture_me_likelihood(data, params, sill, Cluster_which, S_clusters):
+    Cor_clusters=list()
+    inv_cluster=list()
+    for idx, bool_vec in enumerate(Cluster_which):
+        Cor_tmp = corr_fn(S_clusters[idx], params, sill)
+        cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
+        Cor_clusters.append(Cor_tmp)
+        inv_cluster.append(cholesky_inv)
+    return cluster_mvn(data, 0, Cluster_which, Cor_clusters, inv_cluster)
+ 
 
 ##
 ## -------------------------------------------------------------------------- ##

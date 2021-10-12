@@ -132,9 +132,13 @@ if __name__ == "__main__":
    
    theta_c = initial_values['theta_c']
    theta_c_loc0 = initial_values['theta_c_loc0']
+   sill_loc0 = initial_values['sill_loc0']
    theta_c_loc1 = initial_values['theta_c_loc1']
+   sill_loc1 = initial_values['sill_loc1']
    theta_c_scale = initial_values['theta_c_scale']
+   sill_scale = initial_values['sill_scale']
    theta_c_shape = initial_values['theta_c_shape']
+   sill_shape = initial_values['sill_shape']
    
    Cluster_which = initial_values['Cluster_which']
    S_clusters = initial_values['S_clusters']
@@ -173,7 +177,7 @@ if __name__ == "__main__":
    Cor_loc0_clusters=list()
    inv_loc0_cluster=list()
    for i in np.arange(n_clusters):
-        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc0)
+        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc0, sill_loc0)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_loc0_clusters.append(Cor_tmp)
         inv_loc0_cluster.append(cholesky_inv)
@@ -181,7 +185,7 @@ if __name__ == "__main__":
    Cor_loc1_clusters=list()
    inv_loc1_cluster=list()
    for i in np.arange(n_clusters):
-        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc1)
+        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc1, sill_loc1)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_loc1_clusters.append(Cor_tmp)
         inv_loc1_cluster.append(cholesky_inv)
@@ -189,7 +193,7 @@ if __name__ == "__main__":
    Cor_scale_clusters=list()
    inv_scale_cluster=list()
    for i in np.arange(n_clusters):
-        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_scale)
+        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_scale, sill_scale)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_scale_clusters.append(Cor_tmp)
         inv_scale_cluster.append(cholesky_inv)
@@ -197,7 +201,7 @@ if __name__ == "__main__":
    Cor_shape_clusters=list()
    inv_shape_cluster=list()
    for i in np.arange(n_clusters):
-        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_shape)
+        Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_shape, sill_shape)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_shape_clusters.append(Cor_tmp)
         inv_shape_cluster.append(cholesky_inv)
@@ -242,7 +246,8 @@ if __name__ == "__main__":
      tau_sqd_trace[0] = tau_sqd
      theta_c_trace_within_thinning = np.empty((2,thinning)); theta_c_trace_within_thinning[:] = np.nan
      theta_c_trace = np.empty((2,n_updates_thinned)); theta_c_trace[:] = np.nan
-     theta_c_trace[:,0] = theta_c
+     theta_c_trace[:,0] = theta_c 
+     
      
      loc0_trace = np.empty((n_updates_thinned,n_s)); loc0_trace[:] = np.nan
      loc0_trace[0,:] = loc0
@@ -267,14 +272,19 @@ if __name__ == "__main__":
      beta_shape_trace[:,0] = beta_shape
      
      theta_c_loc0_trace = np.empty((2,n_updates_thinned)); theta_c_loc0_trace[:] = np.nan
-     theta_c_loc0_trace[:,0] = theta_c_loc0
+     theta_c_loc0_trace[:,0] = np.array([theta_c_loc0[0], sill_loc0])
      theta_c_loc1_trace = np.empty((2,n_updates_thinned)); theta_c_loc1_trace[:] = np.nan
-     theta_c_loc1_trace[:,0] = theta_c_loc1
+     theta_c_loc1_trace[:,0] = np.array([theta_c_loc1[0], sill_loc1])
      theta_c_scale_trace = np.empty((2,n_updates_thinned)); theta_c_scale_trace[:] = np.nan
-     theta_c_scale_trace[:,0] = theta_c_scale
+     theta_c_scale_trace[:,0] = np.array([theta_c_scale[0], sill_scale])
      theta_c_shape_trace = np.empty((2,n_updates_thinned)); theta_c_shape_trace[:] = np.nan
-     theta_c_shape_trace[:,0] = theta_c_shape
+     theta_c_shape_trace[:,0] = np.array([theta_c_shape[0], sill_shape])
      
+     theta_c_loc0_within_thinning = np.empty((2,thinning)); theta_c_loc0_within_thinning[:] = np.nan
+     theta_c_loc1_within_thinning = np.empty((2,thinning)); theta_c_loc1_within_thinning[:] = np.nan
+     theta_c_scale_within_thinning = np.empty((2,thinning)); theta_c_scale_within_thinning[:] = np.nan
+     theta_c_shape_within_thinning = np.empty((2,thinning)); theta_c_shape_within_thinning[:] = np.nan
+    
     
      delta_accept = 0
      tau_sqd_accept = 0
@@ -439,70 +449,82 @@ if __name__ == "__main__":
             
            
            # Update theta_c_loc0
-           Metr_theta_c_loc0 = sampler.static_metr(loc0, theta_c_loc0[0], utils.theta_c_param_updata_me_likelihood,
-                             priors.interval_unif, hyper_params_theta_c_loc0, 2,
+           Metr_theta_c_loc0 = sampler.static_metr(loc0,  np.array([theta_c_loc0[0], sill_loc0]), utils.theta_c_param_updata_me_likelihood,
+                             priors.interval_unif_multi, hyper_params_theta_c_loc0, 2,
                              random_generator,
-                             np.nan, sigma_m['theta_c_loc0'], False,
+                             prop_sigma['theta_c_loc0'], sigma_m['theta_c_loc0'], False,
                              theta_c_loc0[1], loc0_mean, Cluster_which, S_clusters)
            theta_c_loc0_accept = theta_c_loc0_accept + Metr_theta_c_loc0['acc_prob']
-           theta_c_loc0[0] = Metr_theta_c_loc0['trace'][0,1]
+           tmp_param = Metr_theta_c_loc0['trace'][:,1]
+           theta_c_loc0[0] = tmp_param[0]
+           sill_loc0 = tmp_param[1]
+           theta_c_loc0_within_thinning[:,index_within] = tmp_param
            if Metr_theta_c_loc0['acc_prob']>0:
                Cor_loc0_clusters=list()
                inv_loc0_cluster=list()
                for i in np.arange(n_clusters):
-                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc0)
+                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc0, sill_loc0)
                    cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
                    Cor_loc0_clusters.append(Cor_tmp)
                    inv_loc0_cluster.append(cholesky_inv)
            
             
            # Update theta_c_loc1
-           Metr_theta_c_loc1 = sampler.static_metr(loc1, theta_c_loc1[0], utils.theta_c_param_updata_me_likelihood,
-                             priors.interval_unif, hyper_params_theta_c_loc1, 2,
+           Metr_theta_c_loc1 = sampler.static_metr(loc1, np.array([theta_c_loc1[0], sill_loc1]), utils.theta_c_param_updata_me_likelihood,
+                             priors.interval_unif_multi, hyper_params_theta_c_loc1, 2,
                              random_generator,
-                             np.nan, sigma_m['theta_c_loc1'], False,
+                             prop_sigma['theta_c_loc1'], sigma_m['theta_c_loc1'], False,
                              theta_c_loc1[1], loc1_mean, Cluster_which, S_clusters)
            theta_c_loc1_accept = theta_c_loc1_accept + Metr_theta_c_loc1['acc_prob']
-           theta_c_loc1[0] = Metr_theta_c_loc1['trace'][0,1]
+           tmp_param = Metr_theta_c_loc1['trace'][:,1]
+           theta_c_loc1[0] = tmp_param[0]
+           sill_loc1 = tmp_param[1]
+           theta_c_loc1_within_thinning[:,index_within] = tmp_param
            if Metr_theta_c_loc1['acc_prob']>0:
                Cor_loc1_clusters=list()
                inv_loc1_cluster=list()
                for i in np.arange(n_clusters):
-                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc1)
+                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc1, sill_loc1)
                    cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
                    Cor_loc1_clusters.append(Cor_tmp)
                    inv_loc1_cluster.append(cholesky_inv)
                    
            # Update theta_c_scale
-           Metr_theta_c_scale = sampler.static_metr(np.log(scale), theta_c_scale[0], utils.theta_c_param_updata_me_likelihood,
-                             priors.interval_unif, hyper_params_theta_c_scale, 2,
+           Metr_theta_c_scale = sampler.static_metr(np.log(scale), np.array([theta_c_scale[0], sill_scale]), utils.theta_c_param_updata_me_likelihood,
+                             priors.interval_unif_multi, hyper_params_theta_c_scale, 2,
                              random_generator,
-                             np.nan, sigma_m['theta_c_scale'], False,
+                             prop_sigma['theta_c_scale'], sigma_m['theta_c_scale'], False,
                              theta_c_scale[1], scale_mean, Cluster_which, S_clusters)
            theta_c_scale_accept = theta_c_scale_accept + Metr_theta_c_scale['acc_prob']
-           theta_c_scale[0] = Metr_theta_c_scale['trace'][0,1]
+           tmp_param = Metr_theta_c_scale['trace'][:,1]
+           theta_c_scale[0] = tmp_param[0]
+           sill_scale = tmp_param[1]
+           theta_c_scale_within_thinning[:,index_within] = tmp_param
            if Metr_theta_c_scale['acc_prob']>0:
                Cor_scale_clusters=list()
                inv_scale_cluster=list()
                for i in np.arange(n_clusters):
-                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_scale)
+                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_scale, sill_scale)
                    cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
                    Cor_scale_clusters.append(Cor_tmp)
                    inv_scale_cluster.append(cholesky_inv)
                    
            # Update theta_c_shape
-           Metr_theta_c_shape = sampler.static_metr(shape, theta_c_shape[0], utils.theta_c_param_updata_me_likelihood,
-                            priors.interval_unif, hyper_params_theta_c_shape, 2,
+           Metr_theta_c_shape = sampler.static_metr(shape, np.array([theta_c_shape[0], sill_shape]), utils.theta_c_param_updata_me_likelihood,
+                            priors.interval_unif_multi, hyper_params_theta_c_shape, 2,
                             random_generator,
-                            np.nan, sigma_m['theta_c_shape'], False,
+                            prop_sigma['theta_c_shape'], sigma_m['theta_c_shape'], False,
                             theta_c_shape[1], shape_mean, Cluster_which, S_clusters)
            theta_c_shape_accept = theta_c_shape_accept + Metr_theta_c_shape['acc_prob']
-           theta_c_shape[0] = Metr_theta_c_shape['trace'][0,1]
+           tmp_param = Metr_theta_c_shape['trace'][:,1]
+           theta_c_shape[0] = tmp_param[0]
+           sill_shape = tmp_param[1]
+           theta_c_shape_within_thinning[:,index_within] = tmp_param
            if Metr_theta_c_shape['acc_prob']>0:
                Cor_shape_clusters=list()
                inv_shape_cluster=list()
                for i in np.arange(n_clusters):
-                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_shape)
+                   Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_shape, sill_shape)
                    cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
                    Cor_shape_clusters.append(Cor_tmp)
                    inv_shape_cluster.append(cholesky_inv)
@@ -583,10 +605,10 @@ if __name__ == "__main__":
                beta_loc1_trace[:,index] = beta_loc1
                beta_scale_trace[:,index] = beta_scale
                beta_shape_trace[:,index] = beta_shape
-               theta_c_loc0_trace[:,index] = theta_c_loc0
-               theta_c_loc1_trace[:,index] = theta_c_loc1
-               theta_c_scale_trace[:,index] = theta_c_scale
-               theta_c_shape_trace[:,index] = theta_c_shape
+               theta_c_loc0_trace[:,index] = np.array([theta_c_loc0[0],sill_loc0])
+               theta_c_loc1_trace[:,index] = np.array([theta_c_loc1[0],sill_loc1])
+               theta_c_scale_trace[:,index] = np.array([theta_c_scale[0],sill_scale])
+               theta_c_shape_trace[:,index] = np.array([theta_c_shape[0],sill_shape])
                
                loc0_trace[index,:] = loc0
                loc1_trace[index,:] = loc1
@@ -678,18 +700,63 @@ if __name__ == "__main__":
                        prop_sigma['beta_shape'] = prop_sigma['beta_shape'] + eps*np.eye(n_covariates)
                        print("Oops. Proposal covariance matrix is now:\n")
                        print(prop_sigma['beta_shape'])
-               
-               sigma_m['theta_c_loc0'] = np.exp(np.log(sigma_m['theta_c_loc0']) + gamma1*(theta_c_loc0_accept/thinning - r_opt_1d))
+                              
+               sigma_m['theta_c_loc0'] = np.exp(np.log(sigma_m['theta_c_loc0']) + gamma1*(theta_c_loc0_accept/thinning - r_opt_2d))
                theta_c_loc0_accept = 0
+               prop_sigma['theta_c_loc0'] = prop_sigma['theta_c_loc0'] + gamma2*(np.cov(theta_c_loc0_within_thinning) - prop_sigma['theta_c_loc0'])
+               check_chol_cont = True
+               while check_chol_cont:
+                   try:
+                       # Initialize prop_C
+                       np.linalg.cholesky(prop_sigma['theta_c_loc0'])
+                       check_chol_cont = False
+                   except  np.linalg.LinAlgError:
+                       prop_sigma['theta_c_loc0'] = prop_sigma['theta_c_loc0'] + eps*np.eye(2)
+                       print("Oops. Proposal covariance matrix is now:\n")
+                       print(prop_sigma['theta_c_loc0'])
                
-               sigma_m['theta_c_loc1'] = np.exp(np.log(sigma_m['theta_c_loc1']) + gamma1*(theta_c_loc1_accept/thinning - r_opt_1d))
+               
+               sigma_m['theta_c_loc1'] = np.exp(np.log(sigma_m['theta_c_loc1']) + gamma1*(theta_c_loc1_accept/thinning - r_opt_2d))
                theta_c_loc1_accept = 0
+               prop_sigma['theta_c_loc1'] = prop_sigma['theta_c_loc1'] + gamma2*(np.cov(theta_c_loc1_within_thinning) - prop_sigma['theta_c_loc1'])
+               check_chol_cont = True
+               while check_chol_cont:
+                   try:
+                       # Initialize prop_C
+                       np.linalg.cholesky(prop_sigma['theta_c_loc1'])
+                       check_chol_cont = False
+                   except  np.linalg.LinAlgError:
+                       prop_sigma['theta_c_loc1'] = prop_sigma['theta_c_loc1'] + eps*np.eye(2)
+                       print("Oops. Proposal covariance matrix is now:\n")
+                       print(prop_sigma['theta_c_loc1'])
                
-               sigma_m['theta_c_scale'] = np.exp(np.log(sigma_m['theta_c_scale']) + gamma1*(theta_c_scale_accept/thinning - r_opt_1d))
+               sigma_m['theta_c_scale'] = np.exp(np.log(sigma_m['theta_c_scale']) + gamma1*(theta_c_scale_accept/thinning - r_opt_2d))
                theta_c_scale_accept = 0
+               prop_sigma['theta_c_scale'] = prop_sigma['theta_c_scale'] + gamma2*(np.cov(theta_c_scale_within_thinning) - prop_sigma['theta_c_scale'])
+               check_chol_cont = True
+               while check_chol_cont:
+                   try:
+                       # Initialize prop_C
+                       np.linalg.cholesky(prop_sigma['theta_c_scale'])
+                       check_chol_cont = False
+                   except  np.linalg.LinAlgError:
+                       prop_sigma['theta_c_scale'] = prop_sigma['theta_c_scale'] + eps*np.eye(2)
+                       print("Oops. Proposal covariance matrix is now:\n")
+                       print(prop_sigma['theta_c_scale'])
                
-               sigma_m['theta_c_shape'] = np.exp(np.log(sigma_m['theta_c_shape']) + gamma1*(theta_c_shape_accept/thinning - r_opt_1d))
+               sigma_m['theta_c_shape'] = np.exp(np.log(sigma_m['theta_c_shape']) + gamma1*(theta_c_shape_accept/thinning - r_opt_2d))
                theta_c_shape_accept = 0
+               prop_sigma['theta_c_shape'] = prop_sigma['theta_c_shape'] + gamma2*(np.cov(theta_c_shape_within_thinning) - prop_sigma['theta_c_shape'])
+               check_chol_cont = True
+               while check_chol_cont:
+                   try:
+                       # Initialize prop_C
+                       np.linalg.cholesky(prop_sigma['theta_c_shape'])
+                       check_chol_cont = False
+                   except  np.linalg.LinAlgError:
+                       prop_sigma['theta_c_shape'] = prop_sigma['theta_c_shape'] + eps*np.eye(2)
+                       print("Oops. Proposal covariance matrix is now:\n")
+                       print(prop_sigma['theta_c_shape'])
                
                sigma_m_loc0_cluster[:] = np.exp(np.log(sigma_m_loc0_cluster) + gamma1*(loc0_accept/thinning - r_opt_md))
                loc0_accept[:] = np.repeat(0,n_clusters)
@@ -736,6 +803,10 @@ if __name__ == "__main__":
                     'theta_c_loc1':theta_c_loc1,
                     'theta_c_scale':theta_c_scale,
                     'theta_c_shape':theta_c_shape,
+                    'sill_loc0':sill_loc0,
+                    'sill_loc1':sill_loc1,
+                    'sill_scale':sill_scale,
+                    'sill_shape':sill_shape,
                     'Cluster_which':Cluster_which,
                     'S_clusters':S_clusters
                     }
@@ -844,24 +915,54 @@ if __name__ == "__main__":
                plt.plot(theta_c_loc0_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(loc0)$')
                plt.subplot2grid(grid_size, (0,1))
+               plt.plot(theta_c_loc0_trace[1,:], color='gray', linestyle='solid')
+               plt.ylabel(r'$sill(loc0)$')
+               plt.subplot2grid(grid_size, (1,0))
                plt.plot(theta_c_loc1_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(loc1)$')
-               plt.subplot2grid(grid_size, (1,0))
+               plt.subplot2grid(grid_size, (1,1))
+               plt.plot(theta_c_loc1_trace[1,:], color='gray', linestyle='solid')
+               plt.ylabel(r'$sill(loc1)$')
+               plt.subplot2grid(grid_size, (2,0))
                plt.plot(theta_c_scale_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(scale)$')
-               plt.subplot2grid(grid_size, (1,1))
+               plt.subplot2grid(grid_size, (2,1))
+               plt.plot(theta_c_scale_trace[1,:], color='gray', linestyle='solid')
+               plt.ylabel(r'$sill(scale)$')
+               plt.subplot2grid(grid_size, (3,0))
                plt.plot(theta_c_shape_trace[0,:], color='gray', linestyle='solid')
                plt.ylabel(r'$\theta_c(shape)$')
-               plt.subplot2grid(grid_size, (2,0)) # rho
+               plt.subplot2grid(grid_size, (3,1))
+               plt.plot(theta_c_shape_trace[1,:], color='gray', linestyle='solid')
+               plt.ylabel(r'$sill(shape)$')
+               plt.tight_layout()
+               pdf_pages.savefig(fig)
+               plt.close()
+               
+               #-page-4
+               fig = plt.figure(figsize = (8.75, 11.75))
+               plt.subplot2grid(grid_size, (0,0)) # loc0
+               plt.plot(loc0_trace[:,wh_to_plot_Xs[1]], color='gray', linestyle='solid')
+               plt.ylabel(r'loc0'+'['+str(wh_to_plot_Xs[1])+']')
+               plt.subplot2grid(grid_size, (0,1)) # loc1
+               plt.plot(loc1_trace[:,wh_to_plot_Xs[1]], color='gray', linestyle='solid')
+               plt.ylabel(r'loc1'+'['+str(wh_to_plot_Xs[1])+']')
+               plt.subplot2grid(grid_size, (1,0)) # scale
+               plt.plot(scale_trace[:,wh_to_plot_Xs[1]], color='gray', linestyle='solid')
+               plt.ylabel(r'scale'+'['+str(wh_to_plot_Xs[1])+']')
+               plt.subplot2grid(grid_size, (1,1)) # shape
+               plt.plot(shape_trace[:,wh_to_plot_Xs[1]], color='gray', linestyle='solid')
+               plt.ylabel(r'shape'+'['+str(wh_to_plot_Xs[1])+']')
+               plt.subplot2grid(grid_size, (2,0)) # loc0
                plt.plot(loc0_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'loc0'+'['+str(wh_to_plot_Xs[2])+']')
-               plt.subplot2grid(grid_size, (2,1)) # nu
+               plt.subplot2grid(grid_size, (2,1)) # loc1
                plt.plot(loc1_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'loc1'+'['+str(wh_to_plot_Xs[2])+']')
-               plt.subplot2grid(grid_size, (3,0)) # mu0: beta_0
+               plt.subplot2grid(grid_size, (3,0)) # scale
                plt.plot(scale_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'scale'+'['+str(wh_to_plot_Xs[2])+']')
-               plt.subplot2grid(grid_size, (3,1)) # mu0: beta_1
+               plt.subplot2grid(grid_size, (3,1)) # shape
                plt.plot(shape_trace[:,wh_to_plot_Xs[2]], color='gray', linestyle='solid')
                plt.ylabel(r'shape'+'['+str(wh_to_plot_Xs[2])+']')
                plt.tight_layout()
