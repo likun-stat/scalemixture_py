@@ -1376,6 +1376,10 @@ def theta_c_param_updata_me_likelihood(data, param, nu, mean, Cluster_which, S_c
 
 ## Fix the sill parameter
 def theta_c_update_mixture_me_likelihood(data, params, sill, Cluster_which, S_clusters):
+    if len(data.shape)==1:
+        data = data.reshape((data.shape[0],1))
+    n_t = data.shape[1]
+    n_s = data.shape[0]
     Cor_clusters=list()
     inv_cluster=list()
     for idx, bool_vec in enumerate(Cluster_which):
@@ -1383,7 +1387,12 @@ def theta_c_update_mixture_me_likelihood(data, params, sill, Cluster_which, S_cl
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_clusters.append(Cor_tmp)
         inv_cluster.append(cholesky_inv)
-    return cluster_mvn(data, 0, Cluster_which, Cor_clusters, inv_cluster)
+    ll = np.empty(n_t)
+    ll[:]=np.nan
+    zero_mean = np.repeat(0, n_s)
+    for idx in np.arange(n_t):
+        ll[idx] = cluster_mvn(data[:,idx], zero_mean, Cluster_which, Cor_clusters, inv_cluster)
+    return np.sum(ll)
  
 
 ##
