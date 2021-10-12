@@ -386,7 +386,7 @@ if __name__ == "__main__":
                              priors.interval_unif_multi, hyper_params_theta_c, 2,
                              random_generator,
                              prop_sigma['theta_c'], sigma_m['theta_c'], False,
-                             Dist)
+                             1, Cluster_which, S_clusters)
            theta_c_accept = theta_c_accept + Metr_theta_c['acc_prob']
            theta_c = Metr_theta_c['trace'][:,1]
            theta_c_trace_within_thinning[:,index_within] = theta_c
