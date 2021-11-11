@@ -139,8 +139,8 @@ if __name__ == "__main__":
            R_onetime = load(f)
            f.close()
            
-           if(delta_trace.shape[0]<n_updates_thinned):
-               add_length = n_updates_thinned - delta_trace.shape[0]
+           if(Z_1t_trace.shape[1]<n_updates_thinned):
+               add_length = n_updates_thinned - Z_1t_trace.shape[1]
                Z_1t_trace = np.pad(Z_1t_trace, ((0,0),(0,add_length)),'constant', constant_values=np.nan)
                R_1t_trace = np.pad(R_1t_trace, (0, add_length), 'constant', constant_values=np.nan)
    
