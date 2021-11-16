@@ -176,44 +176,55 @@ if __name__ == "__main__":
    from scipy.linalg import cholesky
    Cor_loc0_clusters=list()
    inv_loc0_cluster=list()
+   inv_loc0_cluster_proposal=list()
    for i in np.arange(n_clusters):
         Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc0, sill_loc0)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_loc0_clusters.append(Cor_tmp)
         inv_loc0_cluster.append(cholesky_inv)
+        inv_loc0_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
         
    Cor_loc1_clusters=list()
    inv_loc1_cluster=list()
+   inv_loc1_cluster_proposal=list()
    for i in np.arange(n_clusters):
         Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_loc1, sill_loc1)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_loc1_clusters.append(Cor_tmp)
         inv_loc1_cluster.append(cholesky_inv)
+        inv_loc1_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
         
    Cor_scale_clusters=list()
    inv_scale_cluster=list()
+   inv_scale_cluster_proposal=list()
    for i in np.arange(n_clusters):
         Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_scale, sill_scale)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_scale_clusters.append(Cor_tmp)
         inv_scale_cluster.append(cholesky_inv)
+        inv_scale_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
     
    Cor_shape_clusters=list()
    inv_shape_cluster=list()
+   inv_shape_cluster_proposal=list()
    for i in np.arange(n_clusters):
         Cor_tmp = utils.corr_fn(S_clusters[i], theta_c_shape, sill_shape)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_shape_clusters.append(Cor_tmp)
         inv_shape_cluster.append(cholesky_inv)
+        inv_shape_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
 
    Cor_Z_clusters=list()
    inv_Z_cluster=list()
+   inv_Z_cluster_proposal=list()
    for i in np.arange(n_clusters):
         Cor_tmp = utils.corr_fn(S_clusters[i], theta_c)
         cholesky_inv = (cholesky(Cor_tmp,lower=False),np.repeat(1,Cor_tmp.shape[0]))
         Cor_Z_clusters.append(Cor_tmp)
         inv_Z_cluster.append(cholesky_inv)
-
+        inv_Z_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
+        
+   Z_within_thinning = np.empty((n_s,thinning)); Z_within_thinning[:] = np.nan
 
    # Marginal GEV parameters: per location x time
    loc0_mean = Design_mat @beta_loc0
@@ -285,7 +296,11 @@ if __name__ == "__main__":
      theta_c_scale_within_thinning = np.empty((2,thinning)); theta_c_scale_within_thinning[:] = np.nan
      theta_c_shape_within_thinning = np.empty((2,thinning)); theta_c_shape_within_thinning[:] = np.nan
     
-    
+     loc0_within_thinning = np.empty((n_s,thinning)); loc0_within_thinning[:] = np.nan
+     loc1_within_thinning = np.empty((n_s,thinning)); loc1_within_thinning[:] = np.nan
+     scale_within_thinning = np.empty((n_s,thinning)); scale_within_thinning[:] = np.nan
+     shape_within_thinning = np.empty((n_s,thinning)); shape_within_thinning[:] = np.nan
+   
      delta_accept = 0
      tau_sqd_accept = 0
      theta_c_accept = 0
@@ -311,16 +326,18 @@ if __name__ == "__main__":
    # -----------------------------------------------------------------------------------
    # -----------------------------------------------------------------------------------
    for iter in np.arange(1,n_updates):
+       index_within = (iter-1)%thinning
        # Update X
        # print(str(rank)+" "+str(iter)+" Gathered? "+str(np.where(~cen)))
        X_onetime = utils.X_update(Y_onetime, cen[:,rank], cen_above[:,rank], delta, tau_sqd, Loc[:,rank], Scale[:,rank], Shape[:,rank])
       
        # Update Z
        for cluster_num in np.arange(n_clusters):
-             Z_1t_accept[cluster_num] += utils.update_Z_1t_one_cluster_interp(Z_onetime, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
+             Z_1t_accept[cluster_num] += utils.update_Z_1t_one_cluster_interp(Z_onetime, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster, inv_Z_cluster_proposal, 
                                  Y_onetime, X_onetime, R_onetime, cen[:,rank], cen_above[:,rank], prob_below, prob_above, delta, tau_sqd,
                                  Loc[:,rank], Scale[:,rank], Shape[:,rank], xp, den_p, thresh_X, thresh_X_above,
                                  sigma_m_Z_cluster[cluster_num], random_generator)
+       Z_within_thinning[:, index_within] = Z_onetime
       
        # Update R
        Metr_R = sampler.static_metr(Y_onetime, R_onetime, utils.Rt_update_mixture_me_likelihood_interp,
@@ -347,7 +364,7 @@ if __name__ == "__main__":
            X[:] = np.vstack(X_recv).T
            Z[:] = np.vstack(Z_recv).T
            R[:] = R_recv
-           index_within = (iter-1)%thinning
+           
            # print('beta_shape_accept=',beta_shape_accept, ', iter=', iter)
 
            # Update delta
@@ -532,36 +549,40 @@ if __name__ == "__main__":
             
            # Update loc0
            for cluster_num in np.arange(n_clusters):
-               loc0_accept[cluster_num] += utils.update_loc0_GEV_one_cluster_interp(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster,
+               loc0_accept[cluster_num] += utils.update_loc0_GEV_one_cluster_interp(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster, inv_loc0_cluster_proposal,
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                                                             loc1, Scale, Shape, Time, xp, den_p, thresh_X, thresh_X_above, loc0_mean,
                                                                             sigma_m_loc0_cluster[cluster_num], random_generator)
+           loc0_within_thinning[:, index_within] = loc0
            
            # Update loc1
            for cluster_num in np.arange(n_clusters):
-               loc1_accept[cluster_num] += utils.update_loc1_GEV_one_cluster_interp(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster,
+               loc1_accept[cluster_num] += utils.update_loc1_GEV_one_cluster_interp(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster, inv_loc1_cluster_proposal,
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                                                             loc0, Scale, Shape, Time, xp, den_p, thresh_X, thresh_X_above, loc1_mean,
                                                                             sigma_m_loc1_cluster[cluster_num], random_generator)
+           loc1_within_thinning[:, index_within] = loc1
            Loc = np.tile(loc0, n_t) + np.tile(loc1, n_t)*np.repeat(Time,n_s)
            Loc = Loc.reshape((n_s,n_t),order='F')
            
            # Update scale
            for cluster_num in np.arange(n_clusters):
-               scale_accept[cluster_num] += utils.update_scale_GEV_one_cluster_interp(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster,
+               scale_accept[cluster_num] += utils.update_scale_GEV_one_cluster_interp(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster, inv_scale_cluster_proposal,
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                                                             Loc, Shape, Time, xp, den_p, thresh_X, thresh_X_above, scale_mean,
                                                                             sigma_m_scale_cluster[cluster_num], random_generator)
+           scale_within_thinning[:, index_within] = np.log(scale)
            Scale = np.tile(scale, n_t)
            Scale = Scale.reshape((n_s,n_t),order='F')
             
             
            # Update shape
            for cluster_num in np.arange(n_clusters):
-               shape_accept[cluster_num] += utils.update_shape_GEV_one_cluster_interp(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster,
+               shape_accept[cluster_num] += utils.update_shape_GEV_one_cluster_interp(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster, inv_shape_cluster_proposal,
                                                                             Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                                                             Loc, Scale, Time, xp, den_p, thresh_X, thresh_X_above, shape_mean,
                                                                             sigma_m_shape_cluster[cluster_num], random_generator)
+           shape_within_thinning[:, index_within] = shape
            Shape = np.tile(shape, n_t)
            Shape = Shape.reshape((n_s,n_t),order='F')
           
@@ -621,6 +642,9 @@ if __name__ == "__main__":
            gamma1 = c_0*gamma2
            sigma_m_Z_cluster[:] = np.exp(np.log(sigma_m_Z_cluster) + gamma1*(Z_1t_accept/thinning - r_opt_md))
            Z_1t_accept[:] = np.repeat(0,n_clusters)
+           for i in np.arange(n_clusters):
+                   inv_Z_cluster_proposal[i] = inv_Z_cluster_proposal[i] + gamma2*(np.cov(Z_within_thinning) - inv_Z_cluster_proposal[i])
+
            sigma_m['R_1t'] = np.exp(np.log(sigma_m['R_1t']) + gamma1*(R_accept/thinning - r_opt_1d))
            R_accept = 0
           
@@ -759,17 +783,29 @@ if __name__ == "__main__":
                        print(prop_sigma['theta_c_shape'])
                
                sigma_m_loc0_cluster[:] = np.exp(np.log(sigma_m_loc0_cluster) + gamma1*(loc0_accept/thinning - r_opt_md))
-               loc0_accept[:] = np.repeat(0,n_clusters)
+               loc0_accept[:] = np.repeat(0,n_clusters)   
+               for i in np.arange(n_clusters):
+                   inv_loc0_cluster_proposal[i] = inv_loc0_cluster_proposal[i] + gamma2*(np.cov(loc0_within_thinning) - inv_loc0_cluster_proposal[i])
+                   
                # print(' Done with '+str(index)+", mean accept="+str(np.mean(loc0_accept))+", mean sigma_m_loc0="+str(np.mean(sigma_m_loc0_cluster))+",\n")
                
                sigma_m_loc1_cluster[:] = np.exp(np.log(sigma_m_loc1_cluster) + gamma1*(loc1_accept/thinning - r_opt_md))
                loc1_accept[:] = np.repeat(0,n_clusters)
+               for i in np.arange(n_clusters):
+                   inv_loc1_cluster_proposal[i] = inv_loc1_cluster_proposal[i] + gamma2*(np.cov(loc1_within_thinning) - inv_loc1_cluster_proposal[i])
+             
                
                sigma_m_scale_cluster[:] = np.exp(np.log(sigma_m_scale_cluster) + gamma1*(scale_accept/thinning - r_opt_md))
                scale_accept[:] = np.repeat(0,n_clusters)
+               for i in np.arange(n_clusters):
+                   inv_scale_cluster_proposal[i] = inv_scale_cluster_proposal[i] + gamma2*(np.cov(scale_within_thinning) - inv_scale_cluster_proposal[i])
+             
                
                sigma_m_shape_cluster[:] = np.exp(np.log(sigma_m_shape_cluster) + gamma1*(shape_accept/thinning - r_opt_md))
                shape_accept[:] = np.repeat(0,n_clusters)
+               for i in np.arange(n_clusters):
+                   inv_shape_cluster_proposal[i] = inv_shape_cluster_proposal[i] + gamma2*(np.cov(shape_within_thinning) - inv_shape_cluster_proposal[i])
+             
           
        # ----------------------------------------------------------------------------------------
        # -------------------------- Echo & save every 'thinning' steps --------------------------
@@ -847,6 +883,12 @@ if __name__ == "__main__":
                    dump(sigma_m_loc1_cluster, f)
                    dump(sigma_m_scale_cluster, f)
                    dump(sigma_m_shape_cluster, f)
+                   
+                   dump(inv_loc0_cluster_proposal, f)
+                   dump(inv_loc1_cluster_proposal, f)
+                   dump(inv_scale_cluster_proposal, f)
+                   dump(inv_shape_cluster_proposal, f)
+                   dump(inv_Z_cluster_proposal, f)
                    f.close()
                    
                # Echo trace plots
@@ -984,5 +1026,6 @@ if __name__ == "__main__":
                    dump(X_onetime, f)
                    dump(X_s_onetime, f)
                    dump(R_onetime, f)
+                   dump(inv_Z_cluster_proposal, f)
                    f.close()
                

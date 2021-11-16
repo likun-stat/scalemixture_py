@@ -1409,7 +1409,7 @@ def theta_c_update_mixture_me_likelihood(data, params, sill, Cluster_which, S_cl
 ## --- cluster_num: which cluster to update?
 ## --- inv_Z_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
+def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster, inv_Z_cluster_proposal,
                                  Y, X, R, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Scale, Shape, thresh_X, thresh_X_above,
                                  lambda_current_cluster, random_generator):
@@ -1420,8 +1420,8 @@ def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_Z_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_Z_cluster[cluster_num][0].T , tmp_parmas_star)
+    tmp_parmas_star = np.matmul(np.linalg.inv(inv_Z_cluster_proposal[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(inv_Z_cluster_proposal[cluster_num][0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_Z_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
@@ -1450,7 +1450,7 @@ def update_Z_1t_one_cluster(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z
     return accept
 
 
-def update_Z_1t_one_cluster_interp(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster,
+def update_Z_1t_one_cluster_interp(Z, Cluster_which, cluster_num, Cor_Z_clusters, inv_Z_cluster, inv_Z_cluster_proposal,
                                  Y, X, R, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Scale, Shape, xp, den_p, thresh_X, thresh_X_above,
                                  lambda_current_cluster, random_generator):
@@ -1461,8 +1461,8 @@ def update_Z_1t_one_cluster_interp(Z, Cluster_which, cluster_num, Cor_Z_clusters
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_Z_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_Z_cluster[cluster_num][0].T , tmp_parmas_star)
+    tmp_parmas_star = np.matmul(np.linalg.inv(inv_Z_cluster_proposal[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(inv_Z_cluster_proposal[cluster_num][0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_Z_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
@@ -1559,7 +1559,7 @@ def loc0_vec_gev_update_mixture_me_likelihood_interp(data, params, X_s, cen, cen
 ## --- cluster_num: which cluster to update?
 ## --- inv_loc0_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster,
+def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster, inv_loc0_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  loc1, Scale, Shape, Time, thresh_X, thresh_X_above, loc0_mean,
                                  lambda_current_cluster, random_generator):
@@ -1571,8 +1571,9 @@ def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clust
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_loc0_cluster[cluster_num][0].T , tmp_parmas_star)
+    cholesky_inv_proposal = (cholesky(inv_loc0_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
@@ -1598,7 +1599,7 @@ def update_loc0_GEV_one_cluster(loc0, Cluster_which, cluster_num, Cor_loc0_clust
     #result = (X_s,accept)
     return accept
 
-def update_loc0_GEV_one_cluster_interp(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster,
+def update_loc0_GEV_one_cluster_interp(loc0, Cluster_which, cluster_num, Cor_loc0_clusters, inv_loc0_cluster, inv_loc0_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  loc1, Scale, Shape, Time, xp, den_p, thresh_X, thresh_X_above, loc0_mean,
                                  lambda_current_cluster, random_generator):
@@ -1610,8 +1611,9 @@ def update_loc0_GEV_one_cluster_interp(loc0, Cluster_which, cluster_num, Cor_loc
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_loc0_cluster[cluster_num][0].T , tmp_parmas_star)
+    cholesky_inv_proposal = (cholesky(inv_loc0_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc0_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
@@ -1709,7 +1711,7 @@ def loc1_vec_gev_update_mixture_me_likelihood_interp(data, params, X_s, cen, cen
 ## --- cluster_num: which cluster to update?
 ## --- inv_loc1_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster,
+def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster, inv_loc1_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  loc0, Scale, Shape, Time, thresh_X, thresh_X_above, loc1_mean,
                                  lambda_current_cluster, random_generator):
@@ -1721,9 +1723,9 @@ def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clust
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_loc1_cluster[cluster_num][0].T , tmp_parmas_star)
-    
+    cholesky_inv_proposal = (cholesky(inv_loc1_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)    
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
@@ -1748,7 +1750,7 @@ def update_loc1_GEV_one_cluster(loc1, Cluster_which, cluster_num, Cor_loc1_clust
     #result = (X_s,accept)
     return accept
 
-def update_loc1_GEV_one_cluster_interp(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster,
+def update_loc1_GEV_one_cluster_interp(loc1, Cluster_which, cluster_num, Cor_loc1_clusters, inv_loc1_cluster, inv_loc1_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  loc0, Scale, Shape, Time, xp, den_p, thresh_X, thresh_X_above, loc1_mean,
                                  lambda_current_cluster, random_generator):
@@ -1760,8 +1762,9 @@ def update_loc1_GEV_one_cluster_interp(loc1, Cluster_which, cluster_num, Cor_loc
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_loc1_cluster[cluster_num][0].T , tmp_parmas_star)
+    cholesky_inv_proposal = (cholesky(inv_loc1_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_loc1_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
@@ -1859,7 +1862,7 @@ def scale_vec_gev_update_mixture_me_likelihood_interp(data, params, X_s, cen, ce
 ## --- cluster_num: which cluster to update?
 ## --- inv_scale_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster,
+def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster, inv_scale_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Shape, Time, thresh_X, thresh_X_above, scale_mean,
                                  lambda_current_cluster, random_generator):
@@ -1871,9 +1874,9 @@ def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_cl
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , np.log(current_params)) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    log_params_star = np.matmul(inv_scale_cluster[cluster_num][0].T , tmp_parmas_star)
-    
+    cholesky_inv_proposal = (cholesky(inv_scale_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    log_params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)    
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
@@ -1899,7 +1902,7 @@ def update_scale_GEV_one_cluster(scale, Cluster_which, cluster_num, Cor_scale_cl
     return accept
 
 
-def update_scale_GEV_one_cluster_interp(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster,
+def update_scale_GEV_one_cluster_interp(scale, Cluster_which, cluster_num, Cor_scale_clusters, inv_scale_cluster, inv_scale_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Shape, Time, xp, den_p, thresh_X, thresh_X_above, scale_mean,
                                  lambda_current_cluster, random_generator):
@@ -1911,8 +1914,9 @@ def update_scale_GEV_one_cluster_interp(scale, Cluster_which, cluster_num, Cor_s
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , np.log(current_params)) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    log_params_star = np.matmul(inv_scale_cluster[cluster_num][0].T , tmp_parmas_star)
+    cholesky_inv_proposal = (cholesky(inv_scale_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    log_params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_scale_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
@@ -2010,7 +2014,7 @@ def shape_vec_gev_update_mixture_me_likelihood_interp(data, params, X_s, cen, ce
 ## --- cluster_num: which cluster to update?
 ## --- inv_shape_cluster: Cov cholesky matrix list for all clusters
 ## --- lambda_current_cluster: the random walk variance
-def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster,
+def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster, inv_shape_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Scale, Time, thresh_X, thresh_X_above, shape_mean,
                                  lambda_current_cluster, random_generator):
@@ -2022,9 +2026,9 @@ def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_cl
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_shape_cluster[cluster_num][0].T , tmp_parmas_star)
-    
+    cholesky_inv_proposal = (cholesky(inv_shape_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)   
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
     
@@ -2049,7 +2053,7 @@ def update_shape_GEV_one_cluster(shape, Cluster_which, cluster_num, Cor_shape_cl
     #result = (X_s,accept)
     return accept
 
-def update_shape_GEV_one_cluster_interp(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster,
+def update_shape_GEV_one_cluster_interp(shape, Cluster_which, cluster_num, Cor_shape_clusters, inv_shape_cluster, inv_shape_cluster_proposal,
                                  Y, X_s, cen, cen_above, prob_below, prob_above, delta, tau_sqd,
                                  Loc, Scale, Time, xp, den_p, thresh_X, thresh_X_above, shape_mean,
                                  lambda_current_cluster, random_generator):
@@ -2061,8 +2065,9 @@ def update_shape_GEV_one_cluster_interp(shape, Cluster_which, cluster_num, Cor_s
     accept = 0
     
     # 2. Propose parameters
-    tmp_parmas_star = np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
-    params_star = np.matmul(inv_shape_cluster[cluster_num][0].T , tmp_parmas_star)
+    cholesky_inv_proposal = (cholesky(inv_shape_cluster_proposal[cluster_num],lower=False),np.repeat(1,n_current_cluster))
+    tmp_parmas_star = np.matmul(np.linalg.inv(cholesky_inv_proposal[0].T) , current_params) + lambda_current_cluster*random_generator.standard_normal(n_current_cluster)
+    params_star = np.matmul(cholesky_inv_proposal[0].T , tmp_parmas_star)
     
     # plt.plot(np.arange(n_current_cluster), current_params, np.arange(n_current_cluster),params_star)
     # plt.plot(np.arange(n_current_cluster), np.matmul(np.linalg.inv(inv_shape_cluster[cluster_num][0].T) , current_params) , np.arange(n_current_cluster),tmp_parmas_star)
