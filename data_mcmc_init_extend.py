@@ -296,7 +296,7 @@ if __name__ == "__main__":
    inv_Z_cluster_proposal=list()
    for i in np.arange(n_clusters):
         which_tmp = Cluster_which[i]
-        inv_Z_cluster_proposal[i] = (cholesky(sigma_Z_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+        inv_Z_cluster_proposal.append((cholesky(sigma_Z_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
 
    Z_within_thinning = np.empty((n_s,thinning)); Z_within_thinning[:] = np.nan
    
@@ -357,24 +357,24 @@ if __name__ == "__main__":
      inv_loc0_cluster_proposal=list()
      for i in np.arange(n_clusters):
         which_tmp = Cluster_which[i]
-        inv_loc0_cluster_proposal[i] = (cholesky(sigma_loc0_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+        inv_loc0_cluster_proposal.append((cholesky(sigma_loc0_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
         
     
      inv_loc1_cluster_proposal=list()
      for i in np.arange(n_clusters):
         which_tmp = Cluster_which[i]
-        inv_loc1_cluster_proposal[i] = (cholesky(sigma_loc1_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))           
+        inv_loc1_cluster_proposal.append((cholesky(sigma_loc1_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))           
   
      inv_scale_cluster_proposal=list()
      for i in np.arange(n_clusters):
         which_tmp = Cluster_which[i]
-        inv_scale_cluster_proposal[i] = (cholesky(sigma_scale_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+        inv_scale_cluster_proposal.append((cholesky(sigma_scale_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
  
     
      inv_shape_cluster_proposal=list()
      for i in np.arange(n_clusters):
         which_tmp = Cluster_which[i]
-        inv_shape_cluster_proposal[i] = (cholesky(sigma_shape_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+        inv_shape_cluster_proposal.append((cholesky(sigma_shape_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
 
     
     
@@ -705,7 +705,7 @@ if __name__ == "__main__":
            for i in np.arange(n_clusters):
                which_tmp = Cluster_which[i]
                sigma_Z_cluster_proposal[i] = sigma_Z_cluster_proposal[i] + gamma2*(np.cov(Z_within_thinning[which_tmp,:]) - sigma_Z_cluster_proposal[i])
-               inv_Z_cluster_proposal[i] = (cholesky(sigma_Z_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))           
+               inv_Z_cluster_proposal.append((cholesky(sigma_Z_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))           
 
            sigma_m['R_1t'] = np.exp(np.log(sigma_m['R_1t']) + gamma1*(R_accept/thinning - r_opt_1d))
            R_accept = 0
@@ -850,7 +850,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_loc0_cluster_proposal[i] = sigma_loc0_cluster_proposal[i] + gamma2*(np.cov(loc0_within_thinning[which_tmp,:]) - sigma_loc0_cluster_proposal[i])
-                   inv_loc0_cluster_proposal[i] = (cholesky(sigma_loc0_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+                   inv_loc0_cluster_proposal.append((cholesky(sigma_loc0_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
                    
                # print(' Done with '+str(index)+", mean accept="+str(np.mean(loc0_accept))+", mean sigma_m_loc0="+str(np.mean(sigma_m_loc0_cluster))+",\n")
                
@@ -860,7 +860,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_loc1_cluster_proposal[i] = sigma_loc1_cluster_proposal[i] + gamma2*(np.cov(loc1_within_thinning[which_tmp,:]) - sigma_loc1_cluster_proposal[i])
-                   inv_loc1_cluster_proposal[i] = (cholesky(sigma_loc1_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))           
+                   inv_loc1_cluster_proposal.append((cholesky(sigma_loc1_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))           
              
                
                sigma_m_scale_cluster[:] = np.exp(np.log(sigma_m_scale_cluster) + gamma1*(scale_accept/thinning - r_opt_md))
@@ -869,7 +869,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_scale_cluster_proposal[i] = sigma_scale_cluster_proposal[i] + gamma2*(np.cov(scale_within_thinning[which_tmp,:]) - sigma_scale_cluster_proposal[i])
-                   inv_scale_cluster_proposal[i] = (cholesky(sigma_scale_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+                   inv_scale_cluster_proposal.append((cholesky(sigma_scale_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
  
                
                sigma_m_shape_cluster[:] = np.exp(np.log(sigma_m_shape_cluster) + gamma1*(shape_accept/thinning - r_opt_md))
@@ -878,7 +878,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_shape_cluster_proposal[i] = sigma_shape_cluster_proposal[i] + gamma2*(np.cov(shape_within_thinning[which_tmp,:]) - sigma_shape_cluster_proposal[i])
-                   inv_shape_cluster_proposal[i] = (cholesky(sigma_shape_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+                   inv_shape_cluster_proposal.append((cholesky(sigma_shape_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
 
          
           

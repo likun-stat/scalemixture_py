@@ -184,7 +184,7 @@ if __name__ == "__main__":
         Cor_loc0_clusters.append(Cor_tmp)
         inv_loc0_cluster.append(cholesky_inv)
         sigma_loc0_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_loc0_cluster_proposal[i] = (sigma_loc0_cluster_proposal,np.repeat(1,Cor_tmp.shape[0]))
+        inv_loc0_cluster_proposal.append((sigma_loc0_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
         
    Cor_loc1_clusters=list()
    inv_loc1_cluster=list()
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         Cor_loc1_clusters.append(Cor_tmp)
         inv_loc1_cluster.append(cholesky_inv)
         sigma_loc1_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_loc1_cluster_proposal[i] = (sigma_loc1_cluster_proposal,np.repeat(1,Cor_tmp.shape[0]))
+        inv_loc1_cluster_proposal.append((sigma_loc1_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
         
    Cor_scale_clusters=list()
    inv_scale_cluster=list()
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         Cor_scale_clusters.append(Cor_tmp)
         inv_scale_cluster.append(cholesky_inv)
         sigma_scale_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_scale_cluster_proposal[i] = (sigma_scale_cluster_proposal,np.repeat(1,Cor_tmp.shape[0]))
+        inv_scale_cluster_proposal.append((sigma_scale_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
     
    Cor_shape_clusters=list()
    inv_shape_cluster=list()
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         Cor_shape_clusters.append(Cor_tmp)
         inv_shape_cluster.append(cholesky_inv)
         sigma_shape_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_shape_cluster_proposal[i] = (sigma_shape_cluster_proposal,np.repeat(1,Cor_tmp.shape[0]))
+        inv_shape_cluster_proposal.append((sigma_shape_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
 
    Cor_Z_clusters=list()
    inv_Z_cluster=list()
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         Cor_Z_clusters.append(Cor_tmp)
         inv_Z_cluster.append(cholesky_inv)
         sigma_Z_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_Z_cluster_proposal[i] = (sigma_Z_cluster_proposal,np.repeat(1,Cor_tmp.shape[0]))
+        inv_Z_cluster_proposal.append((sigma_Z_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
 
         
    Z_within_thinning = np.empty((n_s,thinning)); Z_within_thinning[:] = np.nan
@@ -657,7 +657,7 @@ if __name__ == "__main__":
            for i in np.arange(n_clusters):
                which_tmp = Cluster_which[i]
                sigma_Z_cluster_proposal[i] = sigma_Z_cluster_proposal[i] + gamma2*(np.cov(Z_within_thinning[which_tmp,:]) - sigma_Z_cluster_proposal[i])
-               inv_Z_cluster_proposal[i] = (cholesky(sigma_Z_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))           
+               inv_Z_cluster_proposal.append((cholesky(sigma_Z_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))           
 
            sigma_m['R_1t'] = np.exp(np.log(sigma_m['R_1t']) + gamma1*(R_accept/thinning - r_opt_1d))
            R_accept = 0
@@ -802,7 +802,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_loc0_cluster_proposal[i] = sigma_loc0_cluster_proposal[i] + gamma2*(np.cov(loc0_within_thinning[which_tmp,:]) - sigma_loc0_cluster_proposal[i])
-                   inv_loc0_cluster_proposal[i] = (cholesky(sigma_loc0_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+                   inv_loc0_cluster_proposal.append((cholesky(sigma_loc0_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
                    
                # print(' Done with '+str(index)+", mean accept="+str(np.mean(loc0_accept))+", mean sigma_m_loc0="+str(np.mean(sigma_m_loc0_cluster))+",\n")
                
@@ -812,7 +812,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_loc1_cluster_proposal[i] = sigma_loc1_cluster_proposal[i] + gamma2*(np.cov(loc1_within_thinning[which_tmp,:]) - sigma_loc1_cluster_proposal[i])
-                   inv_loc1_cluster_proposal[i] = (cholesky(sigma_loc1_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))           
+                   inv_loc1_cluster_proposal.append((cholesky(sigma_loc1_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))           
              
                
                sigma_m_scale_cluster[:] = np.exp(np.log(sigma_m_scale_cluster) + gamma1*(scale_accept/thinning - r_opt_md))
@@ -821,7 +821,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_scale_cluster_proposal[i] = sigma_scale_cluster_proposal[i] + gamma2*(np.cov(scale_within_thinning[which_tmp,:]) - sigma_scale_cluster_proposal[i])
-                   inv_scale_cluster_proposal[i] = (cholesky(sigma_scale_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+                   inv_scale_cluster_proposal.append((cholesky(sigma_scale_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
  
                
                sigma_m_shape_cluster[:] = np.exp(np.log(sigma_m_shape_cluster) + gamma1*(shape_accept/thinning - r_opt_md))
@@ -830,7 +830,7 @@ if __name__ == "__main__":
                for i in np.arange(n_clusters):
                    which_tmp = Cluster_which[i]
                    sigma_shape_cluster_proposal[i] = sigma_shape_cluster_proposal[i] + gamma2*(np.cov(shape_within_thinning[which_tmp,:]) - sigma_shape_cluster_proposal[i])
-                   inv_shape_cluster_proposal[i] = (cholesky(sigma_shape_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp)))
+                   inv_shape_cluster_proposal.append((cholesky(sigma_shape_cluster_proposal[i],lower=False),np.repeat(1,np.sum(which_tmp))))
 
           
        # ----------------------------------------------------------------------------------------
