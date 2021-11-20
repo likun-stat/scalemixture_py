@@ -184,7 +184,7 @@ if __name__ == "__main__":
         Cor_loc0_clusters.append(Cor_tmp)
         inv_loc0_cluster.append(cholesky_inv)
         sigma_loc0_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_loc0_cluster_proposal.append((sigma_loc0_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
+        inv_loc0_cluster_proposal.append((np.diag(np.repeat(1, Cor_tmp.shape[0])),np.repeat(1,Cor_tmp.shape[0])))
         
    Cor_loc1_clusters=list()
    inv_loc1_cluster=list()
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         Cor_loc1_clusters.append(Cor_tmp)
         inv_loc1_cluster.append(cholesky_inv)
         sigma_loc1_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_loc1_cluster_proposal.append((sigma_loc1_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
+        inv_loc1_cluster_proposal.append((np.diag(np.repeat(1, Cor_tmp.shape[0])),np.repeat(1,Cor_tmp.shape[0])))
         
    Cor_scale_clusters=list()
    inv_scale_cluster=list()
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         Cor_scale_clusters.append(Cor_tmp)
         inv_scale_cluster.append(cholesky_inv)
         sigma_scale_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_scale_cluster_proposal.append((sigma_scale_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
+        inv_scale_cluster_proposal.append((np.diag(np.repeat(1, Cor_tmp.shape[0])),np.repeat(1,Cor_tmp.shape[0])))
     
    Cor_shape_clusters=list()
    inv_shape_cluster=list()
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         Cor_shape_clusters.append(Cor_tmp)
         inv_shape_cluster.append(cholesky_inv)
         sigma_shape_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_shape_cluster_proposal.append((sigma_shape_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
+        inv_shape_cluster_proposal.append((np.diag(np.repeat(1, Cor_tmp.shape[0])),np.repeat(1,Cor_tmp.shape[0])))
 
    Cor_Z_clusters=list()
    inv_Z_cluster=list()
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         Cor_Z_clusters.append(Cor_tmp)
         inv_Z_cluster.append(cholesky_inv)
         sigma_Z_cluster_proposal.append(np.diag(np.repeat(1, Cor_tmp.shape[0])))
-        inv_Z_cluster_proposal.append((sigma_Z_cluster_proposal,np.repeat(1,Cor_tmp.shape[0])))
+        inv_Z_cluster_proposal.append((np.diag(np.repeat(1, Cor_tmp.shape[0])),np.repeat(1,Cor_tmp.shape[0])))
 
         
    Z_within_thinning = np.empty((n_s,thinning)); Z_within_thinning[:] = np.nan
